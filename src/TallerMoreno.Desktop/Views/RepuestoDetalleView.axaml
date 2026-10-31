@@ -12,9 +12,12 @@
     <StackPanel Spacing="16">
       <Border Classes="tarjeta" Height="320" ClipToBounds="True">
         <Panel Background="#F2F2F7">
-          <TextBlock Text="{Binding Repuesto.Categoria, Converter={x:Static conv:Convertidores.IconoCategoria}}"
-                     FontSize="96" Opacity="0.85" HorizontalAlignment="Center" VerticalAlignment="Center"
-                     IsVisible="{Binding !Repuesto.TieneFoto}"/>
+          <Image Source="{Binding Repuesto.Categoria, Converter={x:Static conv:Convertidores.ImagenCategoria}}"
+                 Stretch="UniformToFill" IsVisible="{Binding !Repuesto.TieneFoto}"/>
+          <Border Background="#99000000" CornerRadius="8" Padding="10,4" Margin="12"
+                  HorizontalAlignment="Left" VerticalAlignment="Bottom" IsVisible="{Binding !Repuesto.TieneFoto}">
+            <TextBlock Text="Foto de referencia" Foreground="White" FontSize="13"/>
+          </Border>
           <Image Source="{Binding Repuesto.Foto, Converter={x:Static conv:Convertidores.Foto}, ConverterParameter=760}"
                  Stretch="Uniform" IsVisible="{Binding Repuesto.TieneFoto}"/>
         </Panel>

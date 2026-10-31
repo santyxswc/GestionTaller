@@ -6,6 +6,7 @@
 using System.Globalization;
 using Avalonia.Data.Converters;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using TallerMoreno.Core.Abstractions;
 
 namespace TallerMoreno.Desktop.Converters
@@ -21,23 +22,47 @@ namespace TallerMoreno.Desktop.Converters
         /** Nombre de archivo de foto a imagen; el parámetro es el ancho en píxeles (por defecto 280). */
         public static readonly IValueConverter Foto = new ConvertidorFoto();
 
-        /** Categoría de repuesto a un ícono para cuando no hay foto. */
-        public static readonly IValueConverter IconoCategoria = new FuncValueConverter<string, string>(categoria => categoria switch
+        /**
+         * @brief Categoría de repuesto a una foto real de referencia, para cuando el repuesto no tiene foto.
+         *
+         * Las fotos van dentro del programa (Assets/Categorias) y sus créditos están en docs/CREDITOS-IMAGENES.md.
+         */
+        public static readonly IValueConverter ImagenCategoria = new FuncValueConverter<string, Bitmap>(ImagenDe);
+
+        /** Fotos de categoría ya cargadas, por nombre de archivo. */
+        private static readonly Dictionary<string, Bitmap> _categorias = new();
+
+        /**
+         * @brief Carga la foto de referencia de una categoría.
+         * @param categoria Nombre de la categoría
+         * @return Foto de la categoría, o la de "Otros" si no tiene una propia
+         */
+        private static Bitmap ImagenDe(string categoria)
         {
-            "Baterías" => "🔋",
-            "Llantas" => "🚗",
-            "Aceites y lubricantes" => "🛢️",
-            "Filtros" => "🌀",
-            "Frenos" => "🛑",
-            "Suspensión" => "🔩",
-            "Motor" => "⚙️",
-            "Eléctricos" => "⚡",
-            "Luces" => "💡",
-            "Correas" => "➰",
-            "Refrigeración" => "❄️",
-            "Accesorios" => "🧰",
-            _ => "📦"
-        });
+            string archivo = categoria switch
+            {
+                "Baterías" => "baterias",
+                "Llantas" => "llantas",
+                "Aceites y lubricantes" => "aceites",
+                "Filtros" => "filtros",
+                "Frenos" => "frenos",
+                "Suspensión" => "suspension",
+                "Motor" => "motor",
+                "Eléctricos" => "electricos",
+                "Luces" => "luces",
+                "Correas" => "correas",
+                "Refrigeración" => "refrigeracion",
+                "Accesorios" => "accesorios",
+                _ => "otros"
+            };
+            if (!_categorias.TryGetValue(archivo, out var imagen))
+            {
+                using var recurso = AssetLoader.Open(new Uri($"avares://TallerMoreno/Assets/Categorias/{archivo}.jpg"));
+                imagen = new Bitmap(recurso);
+                _categorias[archivo] = imagen;
+            }
+            return imagen;
+        }
 
         /**
          * @brief Carga las fotos reducidas al ancho pedido y las guarda en memoria.

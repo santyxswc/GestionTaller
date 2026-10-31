@@ -18,6 +18,7 @@
   - El conteo de unidades: ventas restan y entradas suman.
 - README, CHANGELOG y `scripts/pruebas-docker.ps1`.
 - Manejo de errores: mensajes claros, `errores.log` en la carpeta de datos y aviso si no puede arrancar.
+- Fotos reales de referencia por categoría para los repuestos sin foto (créditos en `docs/CREDITOS-IMAGENES.md`).
 - Código subido a GitHub: <https://github.com/santyxswc/GestionTaller> (rama `main`).
 
 ## Pendiente

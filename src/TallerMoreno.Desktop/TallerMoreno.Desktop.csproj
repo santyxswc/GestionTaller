@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+    <!-- Las licencias de las fotos piden llevar los créditos junto al programa. -->
+    <None Include="..\..\docs\CREDITOS-IMAGENES.md" Link="CREDITOS-IMAGENES.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="appsettings.example.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

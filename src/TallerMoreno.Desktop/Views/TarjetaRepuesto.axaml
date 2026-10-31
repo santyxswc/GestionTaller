@@ -7,9 +7,8 @@
   <Grid RowDefinitions="130,Auto">
     <Border CornerRadius="16,16,0,0" ClipToBounds="True" Background="#F2F2F7">
       <Panel>
-        <TextBlock Text="{Binding Categoria, Converter={x:Static conv:Convertidores.IconoCategoria}}"
-                   FontSize="48" Opacity="0.85" HorizontalAlignment="Center" VerticalAlignment="Center"
-                   IsVisible="{Binding !TieneFoto}"/>
+        <Image Source="{Binding Categoria, Converter={x:Static conv:Convertidores.ImagenCategoria}}"
+               Stretch="UniformToFill" IsVisible="{Binding !TieneFoto}"/>
         <Image Source="{Binding Foto, Converter={x:Static conv:Convertidores.Foto}}" Stretch="UniformToFill"
                IsVisible="{Binding TieneFoto}"/>
       </Panel>

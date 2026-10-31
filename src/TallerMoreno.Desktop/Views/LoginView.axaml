@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.LoginView"
+        Title="Taller Moreno"
+        Width="520" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen"
+        Background="{StaticResource FondoBrush}">
+  <StackPanel Margin="48,40,48,44">
+    <Border Width="84" Height="84" CornerRadius="22" HorizontalAlignment="Center">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+          <GradientStop Color="#FF9F0A" Offset="0"/>
+          <GradientStop Color="#FF6B00" Offset="1"/>
+        </LinearGradientBrush>
+      </Border.Background>
+      <TextBlock Text="🔧" FontSize="44" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Border>
+    <TextBlock Classes="titulo-pagina" Text="Taller Moreno" HorizontalAlignment="Center" Margin="0,18,0,0"/>
+
+    <!-- Primer uso: crear la cuenta del dueño -->
+    <StackPanel IsVisible="{Binding PrimerUso}">
+      <TextBlock Classes="subtitulo" TextAlignment="Center" Margin="0,6,0,8"
+                 Text="Bienvenido. Crea la cuenta del dueño del taller; con ella podrás agregar a los mecánicos."/>
+      <TextBlock Classes="etiqueta" Text="Tu nombre"/>
+      <TextBox x:Name="txtNombre" Text="{Binding Nombre}" Watermark="Ej: Carlos Moreno"/>
+    </StackPanel>
+    <TextBlock Classes="subtitulo" TextAlignment="Center" Margin="0,6,0,8"
+               IsVisible="{Binding !PrimerUso}" Text="Entra con tu usuario"/>
+
+    <TextBlock Classes="etiqueta" Text="Usuario"/>
+    <TextBox x:Name="txtUsuario" Text="{Binding Username}" Watermark="Ej: carlos"/>
+
+    <TextBlock Classes="etiqueta" Text="Contraseña"/>
+    <TextBox x:Name="txtClave" Text="{Binding Password}" PasswordChar="●"/>
+
+    <StackPanel IsVisible="{Binding PrimerUso}">
+      <TextBlock Classes="etiqueta" Text="Repite la contraseña"/>
+      <TextBox Text="{Binding Repetir}" PasswordChar="●"/>
+      <TextBlock Classes="ayuda" Text="Mínimo 4 caracteres."/>
+    </StackPanel>
+
+    <Border Classes="error" Margin="0,18,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}"/>
+    </Border>
+
+    <Button Classes="grande" Margin="0,24,0,0" HorizontalAlignment="Stretch" IsDefault="True"
+            Command="{Binding EntrarCommand}">
+      <Panel>
+        <TextBlock Text="Entrar" IsVisible="{Binding !PrimerUso}"/>
+        <TextBlock Text="Crear cuenta y entrar" IsVisible="{Binding PrimerUso}"/>
+      </Panel>
+    </Button>
+  </StackPanel>
+</Window>

@@ -1,0 +1,107 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.AgregarEditarRepuestoView"
+        Title="{Binding Titulo}"
+        Width="880" Height="720" MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+  <DockPanel Margin="32,28">
+    <StackPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+      <TextBlock Classes="titulo-ventana" Text="{Binding Titulo}"/>
+      <TextBlock Classes="subtitulo" Text="Los campos con * son obligatorios."/>
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,20,0,0">
+      <Button Classes="secundario" Content="Cancelar" Width="140" IsCancel="True" Command="{Binding CancelCommand}"/>
+      <Button Content="Guardar" Width="160" IsDefault="True" Command="{Binding SaveCommand}"/>
+    </StackPanel>
+    <Border DockPanel.Dock="Bottom" Classes="error" Margin="0,16,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}"/>
+    </Border>
+
+    <Grid ColumnDefinitions="260,32,*">
+      <!-- Foto -->
+      <StackPanel>
+        <TextBlock Classes="etiqueta" Text="Foto"/>
+        <Border Height="240" CornerRadius="16" Background="#F2F2F7" ClipToBounds="True">
+          <Panel>
+            <StackPanel IsVisible="{Binding !TieneFoto}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="6">
+              <TextBlock Text="📷" FontSize="48" HorizontalAlignment="Center" Opacity="0.6"/>
+              <TextBlock Text="Sin foto" Foreground="{StaticResource TextoSuaveBrush}" HorizontalAlignment="Center"/>
+            </StackPanel>
+            <Image Source="{Binding Foto}" Stretch="UniformToFill" IsVisible="{Binding TieneFoto}"/>
+          </Panel>
+        </Border>
+        <Button Classes="secundario" Content="Elegir foto" HorizontalAlignment="Stretch" Margin="0,12,0,0"
+                Command="{Binding ElegirFotoCommand}"/>
+        <Button Classes="secundario" Content="Quitar foto" HorizontalAlignment="Stretch" Margin="0,8,0,0"
+                Foreground="{StaticResource PeligroBrush}" IsVisible="{Binding TieneFoto}" Command="{Binding QuitarFotoCommand}"/>
+        <TextBlock Classes="ayuda" Text="Puedes usar una foto tomada con el celular; se reduce sola."/>
+      </StackPanel>
+
+      <!-- Datos -->
+      <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,12,0">
+          <TextBlock Classes="etiqueta" Text="Nombre *"/>
+          <TextBox Text="{Binding Form.Nombre}" Watermark="Ej: Batería 12V 45Ah"/>
+
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel>
+              <TextBlock Classes="etiqueta" Text="Categoría *"/>
+              <ComboBox ItemsSource="{Binding Categorias}" SelectedItem="{Binding Form.Categoria}" HorizontalAlignment="Stretch"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Classes="etiqueta" Text="Marca"/>
+              <TextBox Text="{Binding Form.Marca}" Watermark="Ej: MAC"/>
+            </StackPanel>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel>
+              <TextBlock Classes="etiqueta" Text="Precio de venta *"/>
+              <NumericUpDown Value="{Binding Form.PrecioVenta}" Minimum="0" Increment="1000" FormatString="N0"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Classes="etiqueta" Text="Costo (lo que te cuesta)"/>
+              <NumericUpDown Value="{Binding Form.PrecioCompra}" Minimum="0" Increment="1000" FormatString="N0"/>
+            </StackPanel>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel>
+              <TextBlock Classes="etiqueta" Text="Unidades en bodega *"/>
+              <NumericUpDown Value="{Binding Form.Stock}" Minimum="0" Increment="1" FormatString="N0"
+                             IsEnabled="{Binding !IsEditMode}"/>
+              <TextBlock Classes="ayuda" IsVisible="{Binding IsEditMode}"
+                         Text="Para cambiar las unidades usa «Ajustar unidades» o «Llegó mercancía»."/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Classes="etiqueta" Text="Avisar cuando queden"/>
+              <NumericUpDown Value="{Binding Form.StockMinimo}" Minimum="0" Increment="1" FormatString="N0"/>
+            </StackPanel>
+          </Grid>
+
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel>
+              <TextBlock Classes="etiqueta" Text="Código o referencia"/>
+              <TextBox Text="{Binding Form.Codigo}" Watermark="Opcional"/>
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Classes="etiqueta" Text="Ubicación en el taller"/>
+              <TextBox Text="{Binding Form.Ubicacion}" Watermark="Ej: Estante 3"/>
+            </StackPanel>
+          </Grid>
+
+          <TextBlock Classes="etiqueta" Text="Proveedor habitual"/>
+          <ComboBox ItemsSource="{Binding Proveedores}" SelectedItem="{Binding Proveedor}" HorizontalAlignment="Stretch"/>
+
+          <TextBlock Classes="etiqueta" Text="Notas"/>
+          <TextBox Text="{Binding Form.Descripcion}" AcceptsReturn="True" TextWrapping="Wrap" Height="80"
+                   VerticalContentAlignment="Top" Padding="14,10"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+  </DockPanel>
+</Window>

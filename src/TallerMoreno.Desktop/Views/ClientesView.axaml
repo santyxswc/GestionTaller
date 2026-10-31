@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TallerMoreno.Desktop.Views.ClientesView">
+  <DockPanel Margin="32,28,32,24">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto">
+      <StackPanel>
+        <TextBlock Classes="titulo-pagina" Text="Clientes"/>
+        <TextBlock Classes="subtitulo" Text="{Binding Resumen}"/>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <Button Classes="secundario" Content="📥  Descargar Excel" Command="{Binding ExcelCommand}"/>
+        <Button Content="＋  Nuevo cliente" Command="{Binding NuevoCommand}"/>
+      </StackPanel>
+    </Grid>
+
+    <TextBox DockPanel.Dock="Top" Classes="buscador" Margin="0,18,0,16" Text="{Binding Busqueda}"
+             Watermark="🔍  Buscar por nombre, placa, celular o cédula"/>
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
+      <Button Content="🧾  Ver compras" Command="{Binding ComprasCommand}"/>
+      <Button Classes="secundario" Content="✏️  Editar" Command="{Binding EditarCommand}"/>
+      <Button Classes="secundario" Content="Eliminar" Foreground="{StaticResource PeligroBrush}"
+              IsVisible="{Binding EsAdmin}" Command="{Binding EliminarCommand}"/>
+    </StackPanel>
+
+    <Panel>
+      <Border Classes="tarjeta" ClipToBounds="True" IsVisible="{Binding !SinResultados}">
+        <DataGrid x:Name="tabla" ItemsSource="{Binding Clientes}" SelectedItem="{Binding Seleccionado}">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="2*"/>
+            <DataGridTextColumn Header="Placa" Binding="{Binding Placa}" Width="110"/>
+            <DataGridTextColumn Header="Vehículo" Binding="{Binding Vehiculo}" Width="*"/>
+            <DataGridTextColumn Header="Celular" Binding="{Binding Telefono}" Width="140"/>
+            <DataGridTextColumn Header="Compras" Binding="{Binding NumeroCompras}" Width="100"/>
+            <DataGridTextColumn Header="Total comprado" Binding="{Binding TotalComprado, StringFormat='{}{0:C0}'}" Width="150"/>
+            <DataGridTextColumn Header="Última compra" Binding="{Binding UltimaCompra, StringFormat='{}{0:dd/MM/yyyy}'}" Width="130"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+      <TextBlock IsVisible="{Binding SinResultados}" Classes="subtitulo" HorizontalAlignment="Center"
+                 Margin="0,60,0,0" Text="No hay clientes para mostrar."/>
+    </Panel>
+  </DockPanel>
+</UserControl>

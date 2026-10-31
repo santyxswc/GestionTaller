@@ -1,0 +1,85 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TallerMoreno.Desktop.Views.HistorialView">
+  <DockPanel Margin="32,28,32,24">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto">
+      <StackPanel>
+        <TextBlock Classes="titulo-pagina" Text="Historial de ventas"/>
+        <TextBlock Classes="subtitulo" Text="Toca una venta dos veces para ver qué se vendió."/>
+      </StackPanel>
+      <Button Grid.Column="1" Classes="secundario" VerticalAlignment="Center" Content="📥  Descargar Excel"
+              IsVisible="{Binding EsAdmin}" Command="{Binding ExcelCommand}"/>
+    </Grid>
+
+    <ListBox DockPanel.Dock="Top" Classes="chips" Margin="0,18,0,0"
+             ItemsSource="{Binding Periodos}" SelectedItem="{Binding Periodo}"/>
+
+    <ItemsControl DockPanel.Dock="Top" ItemsSource="{Binding Cifras}" Margin="0,4,0,16">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <UniformGrid Rows="1"/>
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate>
+          <Border Classes="tarjeta" Padding="20,16" Margin="0,0,14,0">
+            <StackPanel>
+              <TextBlock Text="{Binding Etiqueta}" Foreground="{StaticResource TextoSuaveBrush}" FontSize="15"/>
+              <TextBlock Classes="cifra" Text="{Binding Valor}"/>
+            </StackPanel>
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <TextBox DockPanel.Dock="Top" Classes="buscador" Margin="0,0,0,16" Text="{Binding Busqueda}"
+             Watermark="🔍  Buscar por cliente, placa, quién vendió o número"/>
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
+      <Button Content="🧾  Ver detalle" Command="{Binding VerCommand}"/>
+      <Button Classes="secundario" Content="Anular venta" Foreground="{StaticResource PeligroBrush}"
+              IsVisible="{Binding EsAdmin}" Command="{Binding AnularCommand}"/>
+    </StackPanel>
+
+    <Grid ColumnDefinitions="*,Auto">
+      <Panel>
+        <Border Classes="tarjeta" ClipToBounds="True" IsVisible="{Binding !SinResultados}">
+          <DataGrid x:Name="tabla" ItemsSource="{Binding Ventas}" SelectedItem="{Binding Seleccionada}">
+            <DataGrid.Columns>
+              <DataGridTextColumn Header="N°" Binding="{Binding Id}" Width="70"/>
+              <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='{}{0:dd/MM HH:mm}'}" Width="120"/>
+              <DataGridTextColumn Header="Cliente" Binding="{Binding Cliente}" Width="*"/>
+              <DataGridTextColumn Header="Placa" Binding="{Binding ClientePlaca}" Width="100"/>
+              <DataGridTextColumn Header="Pago" Binding="{Binding MetodoPago}" Width="130"/>
+              <DataGridTextColumn Header="Vendió" Binding="{Binding UsuarioNombre}" Width="130"/>
+              <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat='{}{0:C0}'}" Width="130"/>
+              <DataGridTextColumn Header="" Binding="{Binding Estado}" Width="90"/>
+            </DataGrid.Columns>
+          </DataGrid>
+        </Border>
+        <TextBlock IsVisible="{Binding SinResultados}" Classes="subtitulo" HorizontalAlignment="Center"
+                   Margin="0,60,0,0" Text="No hay ventas en este periodo."/>
+      </Panel>
+
+      <Border Grid.Column="1" Classes="tarjeta" Width="280" Margin="16,0,0,0" Padding="20,18"
+              VerticalAlignment="Top" IsVisible="{Binding EsAdmin}">
+        <StackPanel>
+          <TextBlock Classes="seccion" Text="Lo más vendido"/>
+          <TextBlock Classes="ayuda" Text="Sin ventas en este periodo." Margin="0,8,0,0"
+                     IsVisible="{Binding !MasVendidos.Count}"/>
+          <ItemsControl ItemsSource="{Binding MasVendidos}">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
+                  <TextBlock Text="{Binding Nombre}" TextTrimming="CharacterEllipsis" Margin="0,0,10,0"/>
+                  <TextBlock Grid.Column="1" Text="{Binding Cantidad, StringFormat='{}{0} und.'}"
+                             Foreground="{StaticResource TextoSuaveBrush}"/>
+                </Grid>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
+      </Border>
+    </Grid>
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="TallerMoreno.Desktop.Views.UsuariosView">
+  <DockPanel Margin="32,28,32,24">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0,0,0,18">
+      <StackPanel>
+        <TextBlock Classes="titulo-pagina" Text="Usuarios"/>
+        <TextBlock Classes="subtitulo" Text="Quién puede entrar al programa."/>
+      </StackPanel>
+      <Button Grid.Column="1" VerticalAlignment="Center" Content="＋  Nuevo usuario" Command="{Binding NuevoCommand}"/>
+    </Grid>
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
+      <Button Classes="secundario" Content="🔑  Nueva contraseña" Command="{Binding RestablecerCommand}"/>
+      <Button Classes="secundario" Content="{Binding TextoEstado}" Command="{Binding CambiarEstadoCommand}"/>
+    </StackPanel>
+
+    <Border Classes="tarjeta" ClipToBounds="True">
+      <DataGrid ItemsSource="{Binding Usuarios}" SelectedItem="{Binding Seleccionado}">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="2*"/>
+          <DataGridTextColumn Header="Usuario" Binding="{Binding Login}" Width="*"/>
+          <DataGridTextColumn Header="Rol" Binding="{Binding Rol}" Width="160"/>
+          <DataGridTextColumn Header="Estado" Binding="{Binding Estado}" Width="120"/>
+          <DataGridTextColumn Header="Último ingreso" Binding="{Binding UltimoIngreso, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="170"/>
+        </DataGrid.Columns>
+      </DataGrid>
+    </Border>
+  </DockPanel>
+</UserControl>

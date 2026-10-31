@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: Build y tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet restore
+      - name: Comprobar el formato del código
+        run: dotnet format TallerMoreno.slnx --verify-no-changes --no-restore
+      - run: dotnet build --no-restore -c Release -p:ContinuousIntegrationBuild=true
+      - name: Ejecutar las pruebas
+        run: dotnet test --no-build -c Release

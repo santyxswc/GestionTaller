@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.ListaDocumentosView"
+        Title="{Binding Titulo}"
+        Width="860" Height="660" MinWidth="700" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource FondoBrush}">
+  <DockPanel Margin="32,28">
+    <StackPanel DockPanel.Dock="Top">
+      <TextBlock Classes="titulo-ventana" Text="{Binding Titulo}"/>
+      <TextBlock Classes="subtitulo" Text="{Binding Subtitulo}"/>
+      <ItemsControl ItemsSource="{Binding Cifras}" Margin="0,18,0,18">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Rows="1"/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border Classes="tarjeta" Padding="18,14" Margin="0,0,12,0">
+              <StackPanel>
+                <TextBlock Text="{Binding Etiqueta}" Foreground="{StaticResource TextoSuaveBrush}" FontSize="14"/>
+                <TextBlock Classes="cifra" Text="{Binding Valor}"/>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,14,0,0">
+      <TextBlock Classes="ayuda" VerticalAlignment="Center" Text="Toca una fila dos veces para ver el detalle."/>
+      <Button Grid.Column="1" Classes="secundario" Content="Cerrar" Width="140" IsCancel="True" Command="{Binding CerrarCommand}"/>
+    </Grid>
+
+    <Panel>
+      <Border Classes="tarjeta" ClipToBounds="True" IsVisible="{Binding !Vacia}">
+        <DataGrid x:Name="tabla" ItemsSource="{Binding Filas}">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="N°" Binding="{Binding Id}" Width="80"/>
+            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="160"/>
+            <DataGridTextColumn Header="Detalle" Binding="{Binding Descripcion}" Width="*"/>
+            <DataGridTextColumn Header="Unid." Binding="{Binding Unidades}" Width="80"/>
+            <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat='{}{0:C0}'}" Width="140"/>
+            <DataGridTextColumn Header="" Binding="{Binding Estado}" Width="100"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+      <TextBlock IsVisible="{Binding Vacia}" Classes="subtitulo" HorizontalAlignment="Center" Margin="0,40,0,0"
+                 Text="{Binding TextoVacio}"/>
+    </Panel>
+  </DockPanel>
+</Window>

@@ -1,0 +1,33 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.AjustarStockView"
+        Title="Ajustar unidades"
+        Width="520" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+  <StackPanel Margin="32,28">
+    <TextBlock Classes="titulo-ventana" Text="Ajustar unidades"/>
+    <TextBlock Classes="subtitulo" Text="{Binding Repuesto.Nombre}"/>
+    <TextBlock Classes="subtitulo" Text="{Binding Repuesto.Stock, StringFormat='Ahora hay {0} en el sistema. Escribe cuántas contaste.'}"/>
+
+    <TextBlock Classes="etiqueta" Text="Unidades contadas"/>
+    <NumericUpDown Value="{Binding NuevoStock}" Minimum="0" Increment="1" FormatString="N0" FontSize="24" MinHeight="56"/>
+    <TextBlock Text="{Binding Diferencia}" FontWeight="SemiBold" Foreground="{StaticResource TextoSuaveBrush}" Margin="2,8,0,0"/>
+
+    <TextBlock Classes="etiqueta" Text="Motivo"/>
+    <ListBox Classes="chips" ItemsSource="{Binding Motivos}" SelectedItem="{Binding Motivo}"/>
+    <TextBox Text="{Binding Motivo}" Watermark="O escribe otro motivo" Margin="0,4,0,0"/>
+
+    <Border Classes="error" Margin="0,16,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}"/>
+    </Border>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,24,0,0">
+      <Button Classes="secundario" Content="Cancelar" Width="130" IsCancel="True" Command="{Binding CancelarCommand}"/>
+      <Button Content="Guardar" Width="150" IsDefault="True" Command="{Binding GuardarCommand}"/>
+    </StackPanel>
+  </StackPanel>
+</Window>

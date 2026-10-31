@@ -1,0 +1,146 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.MainWindow"
+        Title="Taller Moreno"
+        Width="1320" Height="820"
+        MinWidth="1080" MinHeight="640"
+        WindowStartupLocation="CenterScreen"
+        WindowState="Maximized"
+        Background="{StaticResource FondoBrush}">
+
+  <Window.KeyBindings>
+    <KeyBinding Gesture="F1" Command="{Binding IrCommand}" CommandParameter="Vender"/>
+    <KeyBinding Gesture="F2" Command="{Binding IrCommand}" CommandParameter="Inventario"/>
+    <KeyBinding Gesture="F3" Command="{Binding IrCommand}" CommandParameter="Clientes"/>
+    <KeyBinding Gesture="F4" Command="{Binding IrCommand}" CommandParameter="Proveedores"/>
+    <KeyBinding Gesture="F5" Command="{Binding IrCommand}" CommandParameter="Historial"/>
+  </Window.KeyBindings>
+
+  <Window.Styles>
+    <Style Selector="Button.nav TextBlock.icono">
+      <Setter Property="FontSize" Value="24"/>
+      <Setter Property="Width" Value="36"/>
+      <Setter Property="VerticalAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.nav TextBlock.texto">
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="8,0,0,0"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid ColumnDefinitions="260,*">
+    <!-- Menú: las cinco secciones, siempre a un toque -->
+    <DockPanel Background="{StaticResource BarraBrush}">
+      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="24,26,20,22" Spacing="12">
+        <Border Width="44" Height="44" CornerRadius="12">
+          <Border.Background>
+            <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+              <GradientStop Color="#FF9F0A" Offset="0"/>
+              <GradientStop Color="#FF6B00" Offset="1"/>
+            </LinearGradientBrush>
+          </Border.Background>
+          <TextBlock Text="🔧" FontSize="24" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Border>
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock Text="Taller Moreno" Foreground="White" FontSize="20" FontWeight="Bold" LetterSpacing="-0.3"/>
+          <TextBlock Text="Repuestos y ventas" Foreground="#8E8E93" FontSize="13"/>
+        </StackPanel>
+      </StackPanel>
+
+      <Border DockPanel.Dock="Bottom" Background="#151517" Padding="20,16">
+        <StackPanel Spacing="4">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <Border Width="40" Height="40" CornerRadius="20" Background="#3A3A3C">
+              <TextBlock Text="{Binding Inicial}" Foreground="White" FontWeight="Bold" FontSize="17"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel VerticalAlignment="Center" MaxWidth="170">
+              <TextBlock Text="{Binding NombreUsuario}" Foreground="White" FontWeight="SemiBold" FontSize="16"
+                         TextTrimming="CharacterEllipsis"/>
+              <TextBlock Text="{Binding Rol}" Foreground="#8E8E93" FontSize="13"/>
+            </StackPanel>
+          </StackPanel>
+          <Button Classes="enlace" Content="Cambiar contraseña" Margin="0,6,0,0" Command="{Binding CambiarClaveCommand}"/>
+          <Button Classes="enlace" Content="Copia de seguridad" IsVisible="{Binding EsAdmin}" Command="{Binding CopiaSeguridadCommand}"/>
+          <Button Classes="secundario" Content="Salir" HorizontalAlignment="Stretch" Margin="0,8,0,0"
+                  Background="#2C2C2E" Foreground="White" BorderThickness="0" Command="{Binding SalirCommand}"/>
+        </StackPanel>
+      </Border>
+
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel>
+          <Button Classes="nav" Command="{Binding IrCommand}" CommandParameter="Vender"
+                  Classes.activo="{Binding SeccionActual, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Vender}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Classes="icono" Text="🛒"/>
+              <TextBlock Classes="texto" Text="Vender"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="nav" Command="{Binding IrCommand}" CommandParameter="Inventario"
+                  Classes.activo="{Binding SeccionActual, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Inventario}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Classes="icono" Text="📦"/>
+              <TextBlock Classes="texto" Text="Inventario"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="nav" Command="{Binding IrCommand}" CommandParameter="Clientes"
+                  Classes.activo="{Binding SeccionActual, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Clientes}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Classes="icono" Text="👥"/>
+              <TextBlock Classes="texto" Text="Clientes"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="nav" Command="{Binding IrCommand}" CommandParameter="Proveedores"
+                  Classes.activo="{Binding SeccionActual, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Proveedores}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Classes="icono" Text="🚚"/>
+              <TextBlock Classes="texto" Text="Proveedores"/>
+            </StackPanel>
+          </Button>
+          <Button Classes="nav" Command="{Binding IrCommand}" CommandParameter="Historial"
+                  Classes.activo="{Binding SeccionActual, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Historial}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Classes="icono" Text="🧾"/>
+              <TextBlock Classes="texto" Text="Historial de ventas"/>
+            </StackPanel>
+          </Button>
+
+          <StackPanel IsVisible="{Binding EsAdmin}" Margin="0,18,0,0">
+            <TextBlock Text="ADMINISTRACIÓN" Foreground="#8E8E93" FontSize="12" FontWeight="SemiBold"
+                       LetterSpacing="0.6" Margin="28,0,0,6"/>
+            <Button Classes="nav" Command="{Binding IrCommand}" CommandParameter="Usuarios"
+                    Classes.activo="{Binding SeccionActual, Converter={x:Static ObjectConverters.Equal}, ConverterParameter=Usuarios}">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Classes="icono" Text="🔑"/>
+                <TextBlock Classes="texto" Text="Usuarios"/>
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </DockPanel>
+
+    <Panel Grid.Column="1">
+      <TransitioningContentControl Content="{Binding CurrentView}">
+        <TransitioningContentControl.PageTransition>
+          <CrossFade Duration="0:0:0.15"/>
+        </TransitioningContentControl.PageTransition>
+      </TransitioningContentControl>
+
+      <!-- Aviso breve: confirma lo que salió bien sin abrir ventanas -->
+      <Border IsVisible="{Binding Avisos.Visible}"
+              HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,32"
+              Padding="24,16" CornerRadius="16" MaxWidth="640"
+              Background="#1C1C1E" BoxShadow="0 10 30 0 #40000000">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <TextBlock Text="✓" FontSize="20" FontWeight="Bold" Foreground="#30D158" VerticalAlignment="Center"
+                     IsVisible="{Binding !Avisos.EsError}"/>
+          <TextBlock Text="!" FontSize="20" FontWeight="Bold" Foreground="#FF453A" VerticalAlignment="Center"
+                     IsVisible="{Binding Avisos.EsError}"/>
+          <TextBlock Text="{Binding Avisos.Mensaje}" Foreground="White" FontSize="17" FontWeight="SemiBold"
+                     TextWrapping="Wrap" VerticalAlignment="Center" MaxWidth="560"/>
+        </StackPanel>
+      </Border>
+    </Panel>
+  </Grid>
+</Window>

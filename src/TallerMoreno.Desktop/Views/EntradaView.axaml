@@ -1,0 +1,98 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.EntradaView"
+        x:Name="raiz"
+        Title="Llegó mercancía"
+        Width="900" Height="720" MinWidth="780" MinHeight="580"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+  <DockPanel Margin="32,28">
+    <StackPanel DockPanel.Dock="Top">
+      <TextBlock Classes="titulo-ventana" Text="Llegó mercancía"/>
+      <TextBlock Classes="subtitulo" Text="Lo que agregues aquí se suma a las unidades del inventario."/>
+
+      <Grid ColumnDefinitions="*,8,Auto,16,220">
+        <StackPanel>
+          <TextBlock Classes="etiqueta" Text="Proveedor *"/>
+          <AutoCompleteBox ItemsSource="{Binding Proveedores}" SelectedItem="{Binding Proveedor, Mode=TwoWay}"
+                           FilterMode="Custom" ItemFilter="{Binding FiltroProveedores}" MinimumPrefixLength="0"
+                           Watermark="Escribe para buscar"/>
+        </StackPanel>
+        <Button Grid.Column="2" Classes="secundario" Content="＋ Nuevo" VerticalAlignment="Bottom"
+                Command="{Binding NuevoProveedorCommand}"/>
+        <StackPanel Grid.Column="4">
+          <TextBlock Classes="etiqueta" Text="N° de factura"/>
+          <TextBox Text="{Binding Factura}" Watermark="Opcional"/>
+        </StackPanel>
+      </Grid>
+
+      <Border Background="#F7F7F9" CornerRadius="16" Padding="16" Margin="0,20,0,0">
+        <Grid ColumnDefinitions="*,12,130,12,170,12,Auto">
+          <StackPanel>
+            <TextBlock Classes="etiqueta" Text="Repuesto" Margin="2,0,0,6"/>
+            <AutoCompleteBox ItemsSource="{Binding Repuestos}" SelectedItem="{Binding Repuesto, Mode=TwoWay}"
+                             FilterMode="Custom" ItemFilter="{Binding FiltroRepuestos}" MinimumPrefixLength="1"
+                             ValueMemberBinding="{Binding Nombre}" Watermark="Escribe el nombre o código">
+              <AutoCompleteBox.ItemTemplate>
+                <DataTemplate>
+                  <StackPanel Margin="0,4">
+                    <TextBlock Text="{Binding Nombre}" FontWeight="SemiBold"/>
+                    <TextBlock Text="{Binding Stock, StringFormat='Hay {0} unid.'}" FontSize="13"
+                               Foreground="{StaticResource TextoSuaveBrush}"/>
+                  </StackPanel>
+                </DataTemplate>
+              </AutoCompleteBox.ItemTemplate>
+            </AutoCompleteBox>
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Classes="etiqueta" Text="Cantidad" Margin="2,0,0,6"/>
+            <NumericUpDown Value="{Binding Cantidad}" Minimum="1" Increment="1" FormatString="N0"/>
+          </StackPanel>
+          <StackPanel Grid.Column="4">
+            <TextBlock Classes="etiqueta" Text="Costo por unidad" Margin="2,0,0,6"/>
+            <NumericUpDown Value="{Binding Costo}" Minimum="0" Increment="1000" FormatString="N0"/>
+          </StackPanel>
+          <Button Grid.Column="6" Content="Agregar" VerticalAlignment="Bottom" Command="{Binding AgregarCommand}"/>
+        </Grid>
+      </Border>
+    </StackPanel>
+
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,16,0,0">
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock Text="Total de la factura" Foreground="{StaticResource TextoSuaveBrush}"/>
+        <TextBlock Text="{Binding Total, StringFormat='{}{0:C0}'}" FontSize="30" FontWeight="Bold" LetterSpacing="-0.6"/>
+      </StackPanel>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <Button Classes="secundario" Content="Cancelar" Width="130" IsCancel="True" Command="{Binding CancelarCommand}"/>
+        <Button Classes="exito" Content="Sumar al inventario" Command="{Binding GuardarCommand}"/>
+      </StackPanel>
+    </Grid>
+    <Border DockPanel.Dock="Bottom" Classes="error" Margin="0,12,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}"/>
+    </Border>
+
+    <ScrollViewer Margin="0,16,0,0" VerticalScrollBarVisibility="Auto">
+      <ItemsControl ItemsSource="{Binding Lineas}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <Border BorderBrush="{StaticResource SeparadorBrush}" BorderThickness="0,0,0,1" Padding="4,12">
+              <Grid ColumnDefinitions="*,120,150,150,Auto">
+                <TextBlock Text="{Binding Repuesto.Nombre}" FontWeight="SemiBold" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="1" Text="{Binding Cantidad, StringFormat='+{0} unid.'}" VerticalAlignment="Center"
+                           Foreground="{StaticResource ExitoBrush}" FontWeight="SemiBold"/>
+                <TextBlock Grid.Column="2" Text="{Binding Costo, StringFormat='{}{0:C0} c/u'}" VerticalAlignment="Center"
+                           Foreground="{StaticResource TextoSuaveBrush}"/>
+                <TextBlock Grid.Column="3" Text="{Binding Subtotal, StringFormat='{}{0:C0}'}" VerticalAlignment="Center"
+                           FontWeight="Bold" HorizontalAlignment="Right"/>
+                <Button Grid.Column="4" Content="✕" Background="Transparent" Foreground="{StaticResource TextoSuaveBrush}"
+                        Margin="12,0,0,0" Command="{Binding #raiz.DataContext.QuitarCommand}" CommandParameter="{Binding}"/>
+              </Grid>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

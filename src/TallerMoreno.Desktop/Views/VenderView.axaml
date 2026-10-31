@@ -1,0 +1,127 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="using:TallerMoreno.Desktop.Views"
+             x:Class="TallerMoreno.Desktop.Views.VenderView"
+             x:Name="raiz">
+  <Grid ColumnDefinitions="*,440">
+    <!-- Izquierda: buscar y tocar repuestos -->
+    <DockPanel Margin="32,28,20,0">
+      <StackPanel DockPanel.Dock="Top">
+        <TextBlock Classes="titulo-pagina" Text="Vender"/>
+        <TextBlock Classes="subtitulo" Text="Toca un repuesto para agregarlo a la venta."/>
+        <TextBox Classes="buscador" Margin="0,18,0,12" Text="{Binding Busqueda}"
+                 Watermark="🔍  Buscar por nombre, código o marca"/>
+        <ListBox Classes="chips" ItemsSource="{Binding Categorias}" SelectedItem="{Binding Categoria}"/>
+      </StackPanel>
+
+      <Panel>
+        <TextBlock IsVisible="{Binding SinResultados}" Classes="subtitulo" HorizontalAlignment="Center"
+                   Margin="0,60,0,0" Text="No hay repuestos con esa búsqueda."/>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,4,0,24">
+          <ItemsControl ItemsSource="{Binding Repuestos}">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <WrapPanel/>
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Button Classes="tarjeta" Margin="0,0,14,14"
+                        Command="{Binding #raiz.DataContext.AgregarCommand}" CommandParameter="{Binding}">
+                  <v:TarjetaRepuesto/>
+                </Button>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </ScrollViewer>
+      </Panel>
+    </DockPanel>
+
+    <!-- Derecha: la venta actual -->
+    <Border Grid.Column="1" Classes="tarjeta" Margin="0,20,20,20" Padding="24">
+      <DockPanel>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto">
+          <TextBlock Classes="seccion" Text="Venta actual" VerticalAlignment="Center"/>
+          <Button Grid.Column="1" Classes="secundario" Content="Vaciar" MinHeight="40"
+                  IsVisible="{Binding HayLineas}" Command="{Binding VaciarCommand}"/>
+        </Grid>
+
+        <!-- Cliente -->
+        <StackPanel DockPanel.Dock="Top" Margin="0,14,0,0">
+          <TextBlock Classes="etiqueta" Text="Cliente (opcional)" Margin="2,0,0,6"/>
+          <Grid ColumnDefinitions="*,8,Auto">
+            <Panel>
+              <AutoCompleteBox ItemsSource="{Binding Clientes}" SelectedItem="{Binding Cliente, Mode=TwoWay}"
+                               FilterMode="Custom" ItemFilter="{Binding FiltroClientes}" MinimumPrefixLength="1"
+                               Watermark="Buscar cliente o placa"
+                               IsVisible="{Binding !TieneCliente}"/>
+              <Border IsVisible="{Binding TieneCliente}" Background="#E8F1FF" CornerRadius="12" Padding="14,0" MinHeight="48">
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Cliente.Nombre}" FontWeight="SemiBold" VerticalAlignment="Center"
+                             Foreground="#0040DD" TextTrimming="CharacterEllipsis"/>
+                  <Button Grid.Column="1" Content="✕" Background="Transparent" Foreground="#0040DD"
+                          MinHeight="40" Padding="10,0" Command="{Binding QuitarClienteCommand}"
+                          ToolTip.Tip="Quitar cliente"/>
+                </Grid>
+              </Border>
+            </Panel>
+            <Button Grid.Column="2" Classes="secundario" Content="＋ Nuevo" Command="{Binding NuevoClienteCommand}"/>
+          </Grid>
+        </StackPanel>
+
+        <!-- Cobrar -->
+        <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
+          <TextBlock Classes="etiqueta" Text="Cómo paga" Margin="2,0,0,8"/>
+          <ListBox Classes="chips" ItemsSource="{Binding MetodosPago}" SelectedItem="{Binding MetodoPago}"/>
+          <Grid ColumnDefinitions="*,Auto" Margin="2,10,2,14">
+            <TextBlock VerticalAlignment="Bottom" Foreground="{StaticResource TextoSuaveBrush}"
+                       Text="{Binding Unidades, StringFormat='Total · {0} unid.'}"/>
+            <TextBlock Grid.Column="1" Text="{Binding Total, StringFormat='{}{0:C0}'}"
+                       FontSize="38" FontWeight="Bold" LetterSpacing="-1"/>
+          </Grid>
+          <Button Classes="grande exito" Content="Cobrar" HorizontalAlignment="Stretch"
+                  Command="{Binding CobrarCommand}"/>
+        </StackPanel>
+
+        <!-- Líneas -->
+        <Panel Margin="0,18,0,0">
+          <StackPanel IsVisible="{Binding !HayLineas}" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="8">
+            <TextBlock Text="🛒" FontSize="44" HorizontalAlignment="Center" Opacity="0.5"/>
+            <TextBlock Classes="subtitulo" TextAlignment="Center" Text="Todavía no hay repuestos en la venta."/>
+          </StackPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Carrito}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Border Background="#F7F7F9" CornerRadius="14" Padding="14,10" Margin="0,0,0,8">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                      <TextBlock Text="{Binding Repuesto.Nombre}" FontWeight="SemiBold" TextWrapping="Wrap" MaxLines="2"/>
+                      <Button Grid.Column="1" Content="✕" Background="Transparent" Foreground="{StaticResource TextoSuaveBrush}"
+                              MinHeight="32" Padding="8,0" VerticalAlignment="Top"
+                              Command="{Binding #raiz.DataContext.QuitarCommand}" CommandParameter="{Binding}"
+                              ToolTip.Tip="Quitar"/>
+                      <Grid Grid.Row="1" Grid.ColumnSpan="2" ColumnDefinitions="Auto,Auto,Auto,*" Margin="0,8,0,0">
+                        <Button Classes="redondo" Content="−"
+                                Command="{Binding #raiz.DataContext.RestarCommand}" CommandParameter="{Binding}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Cantidad}" FontSize="22" FontWeight="Bold"
+                                   MinWidth="48" TextAlignment="Center" VerticalAlignment="Center"/>
+                        <Button Grid.Column="2" Classes="redondo" Content="+"
+                                Command="{Binding #raiz.DataContext.SumarCommand}" CommandParameter="{Binding}"/>
+                        <StackPanel Grid.Column="3" HorizontalAlignment="Right" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Subtotal, StringFormat='{}{0:C0}'}" FontSize="18" FontWeight="Bold"
+                                     HorizontalAlignment="Right"/>
+                          <TextBlock Text="{Binding Repuesto.PrecioVenta, StringFormat='{}{0:C0} c/u'}" FontSize="13"
+                                     Foreground="{StaticResource TextoSuaveBrush}" HorizontalAlignment="Right"/>
+                        </StackPanel>
+                      </Grid>
+                    </Grid>
+                  </Border>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Panel>
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>

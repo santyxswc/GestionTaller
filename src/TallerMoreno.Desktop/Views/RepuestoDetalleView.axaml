@@ -1,0 +1,107 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:conv="using:TallerMoreno.Desktop.Converters"
+        x:Class="TallerMoreno.Desktop.Views.RepuestoDetalleView"
+        Title="{Binding Repuesto.Nombre}"
+        Width="960" Height="680" MinWidth="820" MinHeight="560"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="{StaticResource FondoBrush}">
+  <Grid ColumnDefinitions="380,*" Margin="28">
+    <!-- Foto y unidades -->
+    <StackPanel Spacing="16">
+      <Border Classes="tarjeta" Height="320" ClipToBounds="True">
+        <Panel Background="#F2F2F7">
+          <TextBlock Text="{Binding Repuesto.Categoria, Converter={x:Static conv:Convertidores.IconoCategoria}}"
+                     FontSize="96" Opacity="0.85" HorizontalAlignment="Center" VerticalAlignment="Center"
+                     IsVisible="{Binding !Repuesto.TieneFoto}"/>
+          <Image Source="{Binding Repuesto.Foto, Converter={x:Static conv:Convertidores.Foto}, ConverterParameter=760}"
+                 Stretch="Uniform" IsVisible="{Binding Repuesto.TieneFoto}"/>
+        </Panel>
+      </Border>
+      <Border Classes="tarjeta" Padding="20">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel>
+            <TextBlock Classes="etiqueta" Text="Unidades en bodega" Margin="0"/>
+            <TextBlock Text="{Binding Repuesto.Stock}" FontSize="52" FontWeight="Bold" LetterSpacing="-1.5"/>
+            <TextBlock Classes="ayuda" Margin="0" Text="{Binding Repuesto.StockMinimo, StringFormat='Se avisa al llegar a {0}'}"/>
+          </StackPanel>
+          <Border Grid.Column="1" Classes="stock" VerticalAlignment="Top"
+                  Classes.poco="{Binding Repuesto.StockBajo}" Classes.agotado="{Binding Repuesto.Agotado}">
+            <TextBlock Text="{Binding Repuesto.EstadoStock}"/>
+          </Border>
+        </Grid>
+      </Border>
+    </StackPanel>
+
+    <!-- Datos, acciones e historial -->
+    <DockPanel Grid.Column="1" Margin="28,0,0,0">
+      <StackPanel DockPanel.Dock="Top">
+        <TextBlock Classes="titulo-ventana" Text="{Binding Repuesto.Nombre}" TextWrapping="Wrap"/>
+        <TextBlock Classes="subtitulo">
+          <Run Text="{Binding Repuesto.Categoria}"/>
+          <Run Text="·"/>
+          <Run Text="{Binding Repuesto.Marca}"/>
+        </TextBlock>
+
+        <Grid ColumnDefinitions="*,*,*" Margin="0,18,0,0">
+          <StackPanel>
+            <TextBlock Classes="etiqueta" Text="Precio de venta" Margin="0"/>
+            <TextBlock Classes="cifra" Text="{Binding Repuesto.PrecioVenta, StringFormat='{}{0:C0}'}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1" IsVisible="{Binding EsAdmin}">
+            <TextBlock Classes="etiqueta" Text="Costo" Margin="0"/>
+            <TextBlock Classes="cifra" Foreground="{StaticResource TextoSuaveBrush}"
+                       Text="{Binding Repuesto.PrecioCompra, StringFormat='{}{0:C0}'}"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2" IsVisible="{Binding EsAdmin}">
+            <TextBlock Classes="etiqueta" Text="Ganancia por unidad" Margin="0"/>
+            <TextBlock Classes="cifra" Foreground="{StaticResource ExitoBrush}"
+                       Text="{Binding Repuesto.Ganancia, StringFormat='{}{0:C0}'}"/>
+          </StackPanel>
+        </Grid>
+
+        <Grid ColumnDefinitions="*,*,*" Margin="0,4,0,0">
+          <StackPanel>
+            <TextBlock Classes="etiqueta" Text="Código"/>
+            <TextBlock Text="{Binding Repuesto.Codigo, TargetNullValue='—'}" FontWeight="SemiBold"/>
+          </StackPanel>
+          <StackPanel Grid.Column="1">
+            <TextBlock Classes="etiqueta" Text="Ubicación"/>
+            <TextBlock Text="{Binding Repuesto.Ubicacion, TargetNullValue='—'}" FontWeight="SemiBold"/>
+          </StackPanel>
+          <StackPanel Grid.Column="2">
+            <TextBlock Classes="etiqueta" Text="Proveedor"/>
+            <TextBlock Text="{Binding Repuesto.ProveedorNombre, TargetNullValue='—'}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+          </StackPanel>
+        </Grid>
+        <TextBlock Classes="ayuda" FontSize="15" Margin="0,12,0,0" Text="{Binding Repuesto.Descripcion}"
+                   IsVisible="{Binding Repuesto.Descripcion, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+        <WrapPanel Margin="0,20,0,0" IsVisible="{Binding EsAdmin}">
+          <Button Content="✏️  Editar" Margin="0,0,10,10" Command="{Binding EditarCommand}"/>
+          <Button Classes="secundario" Content="🔢  Ajustar unidades" Margin="0,0,10,10" Command="{Binding AjustarCommand}"/>
+          <Button Classes="secundario" Content="Eliminar" Foreground="{StaticResource PeligroBrush}" Margin="0,0,10,10"
+                  Command="{Binding EliminarCommand}"/>
+        </WrapPanel>
+        <TextBlock Classes="seccion" Text="Historial de unidades" Margin="0,14,0,10"/>
+      </StackPanel>
+
+      <Button DockPanel.Dock="Bottom" Classes="secundario" Content="Cerrar" HorizontalAlignment="Right" Width="140"
+              Margin="0,14,0,0" IsCancel="True" Command="{Binding CerrarCommand}"/>
+
+      <Border Classes="tarjeta" ClipToBounds="True">
+        <DataGrid ItemsSource="{Binding Movimientos}">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yy HH:mm}'}" Width="130"/>
+            <DataGridTextColumn Header="Qué pasó" Binding="{Binding Tipo}" Width="100"/>
+            <DataGridTextColumn Header="Unid." Binding="{Binding CantidadTexto}" Width="70"/>
+            <DataGridTextColumn Header="Quedaron" Binding="{Binding StockResultante}" Width="90"/>
+            <DataGridTextColumn Header="Detalle" Binding="{Binding Referencia}" Width="*"/>
+            <DataGridTextColumn Header="Quién" Binding="{Binding UsuarioNombre}" Width="120"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </Border>
+    </DockPanel>
+  </Grid>
+</Window>

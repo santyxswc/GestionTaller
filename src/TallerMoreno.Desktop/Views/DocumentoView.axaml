@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.DocumentoView"
+        Title="{Binding Titulo}"
+        Width="720" Height="620" MinHeight="460"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+  <DockPanel Margin="32,28">
+    <StackPanel DockPanel.Dock="Top">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <TextBlock Classes="titulo-ventana" Text="{Binding Titulo}"/>
+        <Border Classes="stock agotado" VerticalAlignment="Center" IsVisible="{Binding Anulada}">
+          <TextBlock Text="Anulada"/>
+        </Border>
+      </StackPanel>
+      <TextBlock Classes="subtitulo" Text="{Binding Subtitulo}"/>
+      <ItemsControl ItemsSource="{Binding Datos}" Margin="0,8,0,16">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <UniformGrid Rows="1"/>
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Margin="0,0,12,0">
+              <TextBlock Classes="etiqueta" Text="{Binding Etiqueta}"/>
+              <TextBlock Text="{Binding Valor}" FontWeight="SemiBold" TextWrapping="Wrap"/>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </StackPanel>
+
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,16,0,0">
+      <StackPanel>
+        <TextBlock Text="Total" Foreground="{StaticResource TextoSuaveBrush}"/>
+        <TextBlock Text="{Binding Total, StringFormat='{}{0:C0}'}" FontSize="32" FontWeight="Bold" LetterSpacing="-0.6"/>
+      </StackPanel>
+      <Button Grid.Column="1" Classes="secundario" Content="Cerrar" Width="140" VerticalAlignment="Center"
+              IsCancel="True" IsDefault="True" Command="{Binding CerrarCommand}"/>
+    </Grid>
+
+    <Border BorderBrush="{StaticResource SeparadorBrush}" BorderThickness="1" CornerRadius="14" ClipToBounds="True">
+      <DataGrid ItemsSource="{Binding Items}">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="Repuesto" Binding="{Binding Nombre}" Width="*"/>
+          <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="80"/>
+          <DataGridTextColumn Header="Precio" Binding="{Binding PrecioUnitario, StringFormat='{}{0:C0}'}" Width="130"/>
+          <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat='{}{0:C0}'}" Width="140"/>
+        </DataGrid.Columns>
+      </DataGrid>
+    </Border>
+  </DockPanel>
+</Window>

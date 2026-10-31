@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.NuevoUsuarioView"
+        Title="Nuevo usuario"
+        Width="500" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+  <StackPanel Margin="32,28">
+    <TextBlock Classes="titulo-ventana" Text="Nuevo usuario"/>
+    <TextBlock Classes="subtitulo" TextWrapping="Wrap" Margin="0,0,0,8"
+               Text="El mecánico puede vender, ver el inventario y recibir mercancía. El administrador además ve costos y ganancias."/>
+
+    <TextBlock Classes="etiqueta" Text="Nombre completo"/>
+    <TextBox x:Name="txtNombre" Text="{Binding Nombre}" Watermark="Ej: Juan Moreno"/>
+
+    <TextBlock Classes="etiqueta" Text="Usuario para entrar"/>
+    <TextBox Text="{Binding Login}" Watermark="Ej: juan"/>
+
+    <TextBlock Classes="etiqueta" Text="Contraseña"/>
+    <TextBox PasswordChar="•" Text="{Binding Clave}"/>
+    <TextBlock Classes="ayuda" Text="Mínimo 4 caracteres. La persona la puede cambiar después."/>
+
+    <TextBlock Classes="etiqueta" Text="Rol"/>
+    <ListBox Classes="chips" ItemsSource="{Binding Roles}" SelectedItem="{Binding Rol}"/>
+
+    <Border Classes="error" Margin="0,16,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}"/>
+    </Border>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,24,0,0">
+      <Button Classes="secundario" Content="Cancelar" Width="130" IsCancel="True" Command="{Binding CancelCommand}"/>
+      <Button Content="Crear usuario" Width="170" IsDefault="True" Command="{Binding GuardarCommand}"/>
+    </StackPanel>
+  </StackPanel>
+</Window>

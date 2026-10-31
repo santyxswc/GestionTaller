@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/TallerMoreno.Core/TallerMoreno.Core.csproj" />
+    <Project Path="src/TallerMoreno.Desktop/TallerMoreno.Desktop.csproj" />
+    <Project Path="src/TallerMoreno.Infrastructure/TallerMoreno.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TallerMoreno.Tests/TallerMoreno.Tests.csproj" />
+  </Folder>
+</Solution>

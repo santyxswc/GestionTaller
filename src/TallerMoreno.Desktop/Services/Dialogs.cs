@@ -74,6 +74,22 @@ namespace TallerMoreno.Desktop.Services
         }
 
         /**
+         * @brief Ventana de error sin dueño, para cuando el programa no puede arrancar.
+         *
+         * Se usa como ventana principal: al cerrarla se cierra el programa.
+         * @param message Mensaje
+         * @param title Título
+         * @return Ventana lista para mostrar
+         */
+        public static Window ErrorAlArrancar(string message, string title = "No se pudo abrir el programa")
+        {
+            var window = Construir(message, title, null, null);
+            window.ShowInTaskbar = true;
+            window.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+            return window;
+        }
+
+        /**
          * @brief Construye y muestra la ventana de mensaje.
          * @param message Mensaje
          * @param title Título
@@ -82,6 +98,26 @@ namespace TallerMoreno.Desktop.Services
          * @return true si se eligió el botón de confirmar
          */
         private static async Task<bool> Show(string message, string title, string confirmar, string cancelar)
+        {
+            var window = Construir(message, title, confirmar, cancelar);
+            var owner = Owner;
+            if (owner == null)
+            {
+                window.Show();
+                return false;
+            }
+            return await window.ShowDialog<bool>(owner);
+        }
+
+        /**
+         * @brief Construye la ventana de mensaje.
+         * @param message Mensaje
+         * @param title Título
+         * @param confirmar Texto del botón destructivo, o null para un solo botón "Entendido"
+         * @param cancelar Texto del botón de cancelar
+         * @return Ventana sin mostrar; se cierra con true si se eligió el botón de confirmar
+         */
+        private static Window Construir(string message, string title, string confirmar, string cancelar)
         {
             var window = new Window
             {
@@ -141,14 +177,7 @@ namespace TallerMoreno.Desktop.Services
                     buttons
                 }
             };
-
-            var owner = Owner;
-            if (owner == null)
-            {
-                window.Show();
-                return false;
-            }
-            return await window.ShowDialog<bool>(owner);
+            return window;
         }
     }
 }

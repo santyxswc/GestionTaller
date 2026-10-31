@@ -168,7 +168,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                Avisos.Error(ex.Message);
+                Avisos.Error(Errores.Mensaje(ex));
             }
         }
 
@@ -183,7 +183,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                Avisos.Error(ex.Message);
+                Avisos.Error(Errores.Mensaje(ex));
             }
         }
 
@@ -280,7 +280,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                Avisos.Error(ex.Message);
+                Avisos.Error(Errores.Mensaje(ex));
                 Filtrar();
             }
         }

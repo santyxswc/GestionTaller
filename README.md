@@ -53,6 +53,7 @@ Todo queda en `%LOCALAPPDATA%\TallerMoreno`:
 
 - `taller.db`: base de datos SQLite (repuestos, ventas, clientes, proveedores, usuarios).
 - `fotos\`: fotos de los repuestos, reducidas automáticamente.
+- `errores.log`: lo que salió mal y el detalle técnico, para revisarlo si alguien avisa de un problema.
 
 Para usar otra carpeta (por ejemplo, una sincronizada), copia `appsettings.example.json` como
 `appsettings.json` junto al ejecutable y escribe la ruta en `Datos:Carpeta`.

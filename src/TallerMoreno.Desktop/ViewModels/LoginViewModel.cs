@@ -74,7 +74,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = "No se pudo abrir la base de datos: " + ex.Message;
+                ErrorMessage = Errores.Mensaje(ex);
             }
             if (!PrimerUso)
                 Username = _preferencias.UltimoUsuario;
@@ -124,7 +124,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = Errores.Mensaje(ex);
             }
         }
     }

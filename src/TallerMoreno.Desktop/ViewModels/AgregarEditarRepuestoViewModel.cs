@@ -151,7 +151,8 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = "No se pudo usar esa imagen: " + ex.Message;
+                Errores.Registrar(ex, "Elegir foto");
+                ErrorMessage = "No se pudo usar esa imagen. Prueba con otra foto (JPG o PNG).";
             }
         }
 
@@ -181,7 +182,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = Errores.Mensaje(ex);
             }
         }
     }

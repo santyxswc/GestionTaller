@@ -4,6 +4,7 @@
  * @author Santiago Caicedo
  */
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.Configuration;
@@ -31,30 +32,55 @@ namespace TallerMoreno.Desktop
         }
 
         /**
-         * @brief Lee appsettings.json (opcional), crea las tablas si faltan y abre el inicio de sesión.
+         * @brief Atrapa los errores no controlados y abre el inicio de sesión, o un aviso si no se puede arrancar.
          */
         public override void OnFrameworkInitializationCompleted()
+        {
+            Errores.AtraparNoControlados();
+
+            Window principal;
+            try
+            {
+                principal = Arrancar();
+            }
+            catch (Exception ex)
+            {
+                // Sin base de datos no hay programa: se explica qué pasó en vez de cerrarse sin avisar.
+                principal = Dialogs.ErrorAlArrancar(
+                    Errores.Mensaje(ex) + "\n\nEl detalle quedó anotado en:\n" + Errores.RutaRegistro);
+            }
+
+            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+            {
+                desktop.ShutdownMode = ShutdownMode.OnLastWindowClose;
+                desktop.MainWindow = principal;
+            }
+
+            base.OnFrameworkInitializationCompleted();
+        }
+
+        /**
+         * @brief Lee la configuración, compone los servicios, prepara la base de datos y crea el inicio de sesión.
+         * @return Ventana de inicio de sesión
+         */
+        private static Window Arrancar()
         {
             var configuration = new ConfigurationBuilder()
                 .SetBasePath(AppContext.BaseDirectory)
                 .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
                 .Build();
 
+            string carpetaDatos = configuration["Datos:Carpeta"];
+            Errores.UsarCarpeta(carpetaDatos);
+
             var servicios = new ServiceCollection()
-                .AgregarTaller(configuration["Datos:Carpeta"])
+                .AgregarTaller(carpetaDatos)
                 .BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
 
             servicios.GetRequiredService<InicializadorBaseDatos>().Inicializar();
             Convertidores.Fotos = servicios.GetRequiredService<IAlmacenFotos>();
 
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
-            {
-                desktop.ShutdownMode = Avalonia.Controls.ShutdownMode.OnLastWindowClose;
-                desktop.MainWindow = servicios.GetRequiredService<FabricaVistas>()
-                    .Ventana<LoginView, LoginViewModel>().Ventana;
-            }
-
-            base.OnFrameworkInitializationCompleted();
+            return servicios.GetRequiredService<FabricaVistas>().Ventana<LoginView, LoginViewModel>().Ventana;
         }
     }
 }

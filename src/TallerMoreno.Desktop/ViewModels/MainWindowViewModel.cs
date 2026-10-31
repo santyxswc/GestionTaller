@@ -106,7 +106,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                Avisos.Error(ex.Message);
+                Avisos.Error(Errores.Mensaje(ex));
             }
         }
 
@@ -148,7 +148,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                await Dialogs.Error(ex.Message);
+                await Dialogs.Error(Errores.Mensaje(ex));
             }
         }
     }

@@ -28,7 +28,15 @@ namespace TallerMoreno.Desktop
             CultureInfo.CurrentCulture = cultura;
             CultureInfo.CurrentUICulture = cultura;
 
-            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            try
+            {
+                BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+            }
+            catch (Exception ex)
+            {
+                Services.Errores.Registrar(ex, "El programa se cerró por un error");
+                Environment.ExitCode = 1;
+            }
         }
 
         /**

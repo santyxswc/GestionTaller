@@ -17,6 +17,7 @@
   - Vender, Inventario e Historial con datos de prueba.
   - El conteo de unidades: ventas restan y entradas suman.
 - README, CHANGELOG y `scripts/pruebas-docker.ps1`.
+- Manejo de errores: mensajes claros, `errores.log` en la carpeta de datos y aviso si no puede arrancar.
 - Código subido a GitHub: <https://github.com/santyxswc/GestionTaller> (rama `main`).
 
 ## Pendiente

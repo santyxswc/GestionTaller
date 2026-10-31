@@ -211,7 +211,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = Errores.Mensaje(ex);
             }
         }
     }

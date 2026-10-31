@@ -1,5 +1,13 @@
 # Cambios
 
+## [Sin publicar]
+
+### Cambiado
+
+- Los errores se explican con palabras sencillas en vez del mensaje técnico, y los inesperados quedan anotados en `errores.log`.
+- Si un error no se atrapa, el programa lo muestra y sigue abierto en vez de cerrarse sin avisar.
+- Si el programa no puede arrancar (por ejemplo, base de datos dañada), lo dice y muestra dónde quedó el detalle.
+
 ## [1.0.0] - 2026-10-26
 
 ### Agregado

@@ -9,6 +9,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TallerMoreno.Core.Models;
 using TallerMoreno.Core.Services;
+using TallerMoreno.Desktop.Services;
 
 namespace TallerMoreno.Desktop.ViewModels
 {
@@ -100,7 +101,7 @@ namespace TallerMoreno.Desktop.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = ex.Message;
+                ErrorMessage = Errores.Mensaje(ex);
             }
         }
     }

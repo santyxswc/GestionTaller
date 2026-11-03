@@ -63,6 +63,8 @@
           </StackPanel>
           <Button Classes="enlace" Content="Cambiar contraseña" Margin="0,6,0,0" Command="{Binding CambiarClaveCommand}"/>
           <Button Classes="enlace" Content="Copia de seguridad" IsVisible="{Binding EsAdmin}" Command="{Binding CopiaSeguridadCommand}"/>
+          <Button Classes="enlace" Content="Restaurar copia" IsVisible="{Binding EsAdmin}" Command="{Binding RestaurarCommand}"/>
+          <Button Classes="enlace" Content="Código de recuperación" IsVisible="{Binding EsAdmin}" Command="{Binding CodigoRecuperacionCommand}"/>
           <Button Classes="secundario" Content="Salir" HorizontalAlignment="Stretch" Margin="0,8,0,0"
                   Background="#2C2C2E" Foreground="White" BorderThickness="0" Command="{Binding SalirCommand}"/>
         </StackPanel>

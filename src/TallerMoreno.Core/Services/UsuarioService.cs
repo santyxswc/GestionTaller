@@ -23,19 +23,100 @@ namespace TallerMoreno.Core.Services
         private readonly IHasherClaves _hasher;
         /** Usuario de la sesión. */
         private readonly ISesionUsuario _sesion;
+        /** Ajustes, donde se guarda el hash del código de recuperación. */
+        private readonly IAjusteRepository _ajustes;
+
+        /** Ajuste con el hash del código de recuperación. */
+        private const string AjusteCodigoHash = "recuperacion_hash";
+        /** Ajuste con la sal del código de recuperación. */
+        private const string AjusteCodigoSal = "recuperacion_sal";
+        /** Letras del código: sin 0/O, 1/I/L ni U/V, que se confunden al copiarlo a mano. */
+        private const string LetrasCodigo = "23456789ABCDEFGHJKMNPQRSTWXYZ";
+        /** Cantidad de letras del código, en grupos de cuatro. */
+        private const int LargoCodigo = 12;
 
         /**
          * @brief Crea el servicio con sus dependencias.
          * @param repo Acceso a datos
          * @param hasher Hash de contraseñas
          * @param sesion Usuario de la sesión
+         * @param ajustes Ajustes generales
          */
-        public UsuarioService(IUsuarioRepository repo, IHasherClaves hasher, ISesionUsuario sesion)
+        public UsuarioService(IUsuarioRepository repo, IHasherClaves hasher, ISesionUsuario sesion, IAjusteRepository ajustes)
         {
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
             _hasher = hasher ?? throw new ArgumentNullException(nameof(hasher));
             _sesion = sesion ?? throw new ArgumentNullException(nameof(sesion));
+            _ajustes = ajustes ?? throw new ArgumentNullException(nameof(ajustes));
         }
+
+        /**
+         * @brief Indica si ya se creó un código de recuperación.
+         * @return false si nunca se ha creado (por ejemplo, datos de la versión 1.0)
+         */
+        public bool TieneCodigoRecuperacion() => _ajustes.Obtener(AjusteCodigoHash) != null;
+
+        /**
+         * @brief Crea un código de recuperación nuevo; el anterior deja de servir. Solo administrador.
+         *
+         * Solo se guarda su hash: el código se muestra una vez para que el dueño lo anote.
+         * @return Código como "K7QM-3XPA-9HTW"
+         */
+        public string GenerarCodigoRecuperacion()
+        {
+            _sesion.ExigirAdmin("crear el código de recuperación");
+            return GuardarCodigoNuevo();
+        }
+
+        /**
+         * @brief Pone una contraseña nueva a un administrador que olvidó la suya, con el código de recuperación.
+         *
+         * El código usado deja de servir y se entrega uno nuevo para anotar.
+         * @param login Usuario del administrador
+         * @param codigo Código de recuperación
+         * @param claveNueva Contraseña nueva
+         * @return Código de recuperación nuevo
+         * @exception InvalidOperationException Si el código o el usuario no son correctos
+         */
+        public string RecuperarClave(string login, string codigo, string claveNueva)
+        {
+            string hash = _ajustes.Obtener(AjusteCodigoHash);
+            string sal = _ajustes.Obtener(AjusteCodigoSal);
+            if (hash == null || sal == null || !_hasher.Verificar(NormalizarCodigo(codigo), hash, sal))
+                throw new InvalidOperationException("El código de recuperación no es correcto.");
+
+            var usuario = _repo.GetByLogin(Normalizar(login));
+            if (usuario == null || !usuario.EsAdmin)
+                throw new InvalidOperationException("Escribe el usuario del dueño o de un administrador.");
+            ValidarClave(claveNueva);
+
+            var (hashClave, salClave) = _hasher.Crear(claveNueva);
+            _repo.ActualizarClave(usuario.Id, hashClave, salClave);
+            if (!usuario.Activo)
+                _repo.ActualizarEstado(usuario.Id, true);
+            return GuardarCodigoNuevo();
+        }
+
+        /**
+         * @brief Genera un código al azar y guarda su hash.
+         * @return Código con guiones
+         */
+        private string GuardarCodigoNuevo()
+        {
+            string letras = System.Security.Cryptography.RandomNumberGenerator.GetString(LetrasCodigo, LargoCodigo);
+            var (hash, sal) = _hasher.Crear(letras);
+            _ajustes.Guardar(AjusteCodigoHash, hash);
+            _ajustes.Guardar(AjusteCodigoSal, sal);
+            return string.Join("-", letras.Chunk(4).Select(g => new string(g)));
+        }
+
+        /**
+         * @brief Quita guiones y espacios y pasa a mayúsculas el código escrito.
+         * @param codigo Código escrito
+         * @return Solo las letras del código
+         */
+        private static string NormalizarCodigo(string codigo) =>
+            new((codigo ?? "").Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
 
         /**
          * @brief Indica si ya existe al menos un usuario.

@@ -1,12 +1,12 @@
 # Estado del proyecto
 
-Última actualización: 2026-10-31.
+Última actualización: 2026-11-03.
 
 ## Hecho
 
 - **Core, Infrastructure y Desktop completos**: compilan sin errores ni advertencias y el formato está limpio
   (`dotnet format TallerMoreno.slnx --verify-no-changes`).
-- **23 pruebas de integración pasan** (`dotnet run --project tests/TallerMoreno.Tests`).
+- **31 pruebas de integración pasan** (`dotnet run --project tests/TallerMoreno.Tests`).
 - Todas las pantallas escritas:
   - **Secciones:** Login (con primer uso), Vender, Inventario, Clientes, Proveedores, Historial de ventas y Usuarios.
   - **Ventanas:** detalle de repuesto, formulario de repuesto con foto, ajustar unidades, llegó mercancía,
@@ -20,6 +20,11 @@
 - Manejo de errores: mensajes claros, `errores.log` en la carpeta de datos y aviso si no puede arrancar.
 - Fotos reales de referencia por categoría para los repuestos sin foto (créditos en `docs/CREDITOS-IMAGENES.md`).
 - Código subido a GitHub: <https://github.com/santyxswc/GestionTaller> (rama `main`).
+- Instalador de Windows (Inno Setup) y publicación en Releases al subir una etiqueta `v*` (v1.1.0 y v1.2.0 publicadas).
+- Copias diarias automáticas, restaurar copia desde el programa, código de recuperación del dueño,
+  una sola ventana del programa y copia antes de migrar la base de datos (esquema versión 2).
+  31 pruebas de integración pasan. Probado con clics en la app real (2026-11-03): código al crear la cuenta,
+  restaurar copia, "¿Olvidaste tu contraseña?" con código errado y correcto, y abrir el programa dos veces.
 
 ## Pendiente
 

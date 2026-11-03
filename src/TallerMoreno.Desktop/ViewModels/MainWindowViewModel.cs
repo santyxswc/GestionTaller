@@ -11,6 +11,8 @@ using TallerMoreno.Core.Services;
 using TallerMoreno.Core.Sesion;
 using TallerMoreno.Desktop.Services;
 using TallerMoreno.Desktop.Views;
+using TallerMoreno.Infrastructure.Archivos;
+using TallerMoreno.Infrastructure.Database;
 
 namespace TallerMoreno.Desktop.ViewModels
 {
@@ -57,6 +59,15 @@ namespace TallerMoreno.Desktop.ViewModels
         public IAsyncRelayCommand CambiarClaveCommand { get; }
         /** Guarda una copia de seguridad (solo administrador). */
         public IAsyncRelayCommand CopiaSeguridadCommand { get; }
+        /** Reemplaza los datos por los de una copia (solo administrador). */
+        public IAsyncRelayCommand RestaurarCommand { get; }
+        /** Crea un código de recuperación nuevo (solo administrador). */
+        public IAsyncRelayCommand CodigoRecuperacionCommand { get; }
+
+        /** Copias diarias y copias antes de restaurar. */
+        private readonly CopiasAutomaticas _copias;
+        /** Migración de la base de datos, por si la copia es de una versión anterior. */
+        private readonly InicializadorBaseDatos _inicializador;
 
         /**
          * @brief Crea los comandos y abre Vender, que es lo que más se usa.
@@ -66,21 +77,28 @@ namespace TallerMoreno.Desktop.ViewModels
          * @param sesion Usuario de la sesión
          * @param vistas Creación de ventanas y secciones
          * @param avisos Avisos breves
+         * @param copias Copias diarias
+         * @param inicializador Migración de la base de datos
          */
         public MainWindowViewModel(Window window, UsuarioService usuarios, ExportacionService exportacion,
-                                   ISesionUsuario sesion, FabricaVistas vistas, Avisos avisos)
+                                   ISesionUsuario sesion, FabricaVistas vistas, Avisos avisos,
+                                   CopiasAutomaticas copias, InicializadorBaseDatos inicializador)
         {
             _usuarios = usuarios;
             _exportacion = exportacion;
             _sesion = sesion;
             _vistas = vistas;
             _window = window;
+            _copias = copias;
+            _inicializador = inicializador;
             Avisos = avisos;
 
             IrCommand = new RelayCommand<string>(Ir);
             SalirCommand = new AsyncRelayCommand(Salir);
             CambiarClaveCommand = new AsyncRelayCommand(CambiarClave);
             CopiaSeguridadCommand = new AsyncRelayCommand(CopiaSeguridad);
+            RestaurarCommand = new AsyncRelayCommand(Restaurar);
+            CodigoRecuperacionCommand = new AsyncRelayCommand(CodigoRecuperacion);
 
             Ir("Vender");
         }
@@ -145,6 +163,62 @@ namespace TallerMoreno.Desktop.ViewModels
             {
                 await Task.Run(() => _exportacion.CrearCopiaSeguridad(ruta));
                 Avisos.Exito("Copia de seguridad guardada. Guárdala también en una USB o en la nube.");
+            }
+            catch (Exception ex)
+            {
+                await Dialogs.Error(Errores.Mensaje(ex));
+            }
+        }
+
+        /**
+         * @brief Pide una copia, guarda primero cómo están los datos ahora, la restaura y vuelve al inicio de sesión.
+         *
+         * Después de restaurar los usuarios pueden ser otros, por eso hay que entrar de nuevo.
+         */
+        private async Task Restaurar()
+        {
+            string ruta = await Archivos.ElegirCopia(_copias.Carpeta);
+            if (ruta == null) return;
+            if (!await Dialogs.Confirm(
+                    $"Los datos del programa volverán a como estaban en la copia «{Path.GetFileName(ruta)}». "
+                    + "Lo que se haya hecho después de esa copia se quita.\n\n"
+                    + "Antes de restaurar se guarda una copia de cómo está todo ahora, por si te equivocas de archivo.",
+                    "¿Restaurar esta copia?", "Restaurar"))
+                return;
+
+            try
+            {
+                string respaldo = await Task.Run(() =>
+                {
+                    string antes = _copias.HacerAntesDe("antes-de-restaurar");
+                    _exportacion.RestaurarCopiaSeguridad(ruta);
+                    _inicializador.Inicializar();
+                    return antes;
+                });
+                await Dialogs.Info(
+                    "La copia quedó restaurada. Entra de nuevo con tu usuario.\n\n"
+                    + $"Lo que había antes quedó guardado en:\n{respaldo}",
+                    "Copia restaurada");
+                await Salir();
+            }
+            catch (Exception ex)
+            {
+                await Dialogs.Error(Errores.Mensaje(ex));
+            }
+        }
+
+        /**
+         * @brief Crea un código de recuperación nuevo y lo muestra para anotarlo.
+         */
+        private async Task CodigoRecuperacion()
+        {
+            if (!await Dialogs.Confirm(
+                    "Se crea un código nuevo y el que tenías anotado deja de servir.",
+                    "¿Crear un código de recuperación nuevo?", "Crear código nuevo"))
+                return;
+            try
+            {
+                await Dialogs.CodigoRecuperacion(_usuarios.GenerarCodigoRecuperacion());
             }
             catch (Exception ex)
             {

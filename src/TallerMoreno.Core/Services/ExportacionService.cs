@@ -106,5 +106,15 @@ namespace TallerMoreno.Core.Services
             _sesion.ExigirAdmin("hacer copias de seguridad");
             _copia.Crear(rutaZip);
         }
+
+        /**
+         * @brief Reemplaza los datos actuales por los de una copia de seguridad. Solo administrador.
+         * @param rutaZip Archivo .zip de la copia
+         */
+        public void RestaurarCopiaSeguridad(string rutaZip)
+        {
+            _sesion.ExigirAdmin("restaurar copias de seguridad");
+            _copia.Restaurar(rutaZip);
+        }
     }
 }

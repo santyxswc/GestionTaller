@@ -20,11 +20,12 @@ namespace TallerMoreno.Desktop
          * @brief Registra la infraestructura, los servicios de negocio y las utilidades de la interfaz.
          * @param servicios Colección donde se registran
          * @param carpetaDatos Carpeta de datos de appsettings.json; vacía usa la de por defecto
+         * @param carpetaCopiasExtra Carpeta adicional para las copias diarias, o null
          * @return La misma colección, para encadenar
          */
-        public static IServiceCollection AgregarTaller(this IServiceCollection servicios, string carpetaDatos)
+        public static IServiceCollection AgregarTaller(this IServiceCollection servicios, string carpetaDatos, string carpetaCopiasExtra = null)
         {
-            servicios.AgregarInfraestructura(carpetaDatos);
+            servicios.AgregarInfraestructura(carpetaDatos, carpetaCopiasExtra);
 
             servicios.AddSingleton<ISesionUsuario, SesionUsuario>();
             servicios.AddSingleton<UsuarioService>();

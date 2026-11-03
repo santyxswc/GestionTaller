@@ -36,6 +36,26 @@ namespace TallerMoreno.Desktop.Services
         }
 
         /**
+         * @brief Pide una copia de seguridad .zip.
+         * @param carpetaInicial Carpeta donde empieza a buscar (la de las copias diarias)
+         * @return Ruta elegida, o null si se canceló
+         */
+        public static async Task<string> ElegirCopia(string carpetaInicial)
+        {
+            var almacen = Dialogs.Owner?.StorageProvider;
+            if (almacen == null) return null;
+            var carpeta = Directory.Exists(carpetaInicial) ? await almacen.TryGetFolderFromPathAsync(carpetaInicial) : null;
+            var archivos = await almacen.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Elige la copia de seguridad",
+                AllowMultiple = false,
+                SuggestedStartLocation = carpeta,
+                FileTypeFilter = [Zip]
+            });
+            return archivos.FirstOrDefault()?.TryGetLocalPath();
+        }
+
+        /**
          * @brief Pregunta dónde guardar un archivo.
          * @param nombreSugerido Nombre propuesto
          * @param tipo Tipo de archivo

@@ -58,6 +58,87 @@ namespace TallerMoreno.Desktop.Services
             Show(message, title, accion, "Cancelar");
 
         /**
+         * @brief Muestra el código de recuperación en grande para que el dueño lo anote.
+         * @param codigo Código como "K7QM-3XPA-9HTW"
+         * @return Tarea que termina al cerrar la ventana
+         */
+        public static async Task CodigoRecuperacion(string codigo)
+        {
+            var window = new Window
+            {
+                Title = "Código de recuperación",
+                Width = 480,
+                Background = Brushes.White,
+                SizeToContent = SizeToContent.Height,
+                CanResize = false,
+                ShowInTaskbar = false,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner
+            };
+            var listo = new Button { Content = "Ya lo anoté", HorizontalAlignment = HorizontalAlignment.Stretch, IsDefault = true, Margin = new Thickness(0, 24, 0, 0) };
+            listo.Click += (_, _) => window.Close(true);
+
+            window.Content = new StackPanel
+            {
+                Margin = new Thickness(32, 28),
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = "Anota este código",
+                        FontSize = 22,
+                        FontWeight = FontWeight.Bold,
+                        TextAlignment = TextAlignment.Center,
+                        Foreground = Brush.Parse("#1C1C1E"),
+                        Margin = new Thickness(0, 0, 0, 10)
+                    },
+                    new TextBlock
+                    {
+                        Text = "Si algún día olvidas tu contraseña, con este código puedes poner una nueva. "
+                             + "Escríbelo en un papel y guárdalo fuera del computador.",
+                        TextWrapping = TextWrapping.Wrap,
+                        TextAlignment = TextAlignment.Center,
+                        FontSize = 16,
+                        LineHeight = 23,
+                        Foreground = Brush.Parse("#3A3A3C")
+                    },
+                    new Border
+                    {
+                        Background = Brush.Parse("#F2F2F7"),
+                        CornerRadius = new CornerRadius(14),
+                        Padding = new Thickness(16, 18),
+                        Margin = new Thickness(0, 20, 0, 0),
+                        Child = new SelectableTextBlock
+                        {
+                            Text = codigo,
+                            FontFamily = new FontFamily("Consolas, Courier New, monospace"),
+                            FontSize = 34,
+                            FontWeight = FontWeight.Bold,
+                            LetterSpacing = 2,
+                            TextAlignment = TextAlignment.Center,
+                            Foreground = Brush.Parse("#1C1C1E")
+                        }
+                    },
+                    new TextBlock
+                    {
+                        Text = "Cada vez que se usa, el programa da uno nuevo.",
+                        TextWrapping = TextWrapping.Wrap,
+                        TextAlignment = TextAlignment.Center,
+                        FontSize = 13,
+                        Foreground = Brush.Parse("#6E6E73"),
+                        Margin = new Thickness(0, 10, 0, 0)
+                    },
+                    listo
+                }
+            };
+
+            var owner = Owner;
+            if (owner == null)
+                window.Show();
+            else
+                await window.ShowDialog<bool>(owner);
+        }
+
+        /**
          * @brief Abre un formulario como ventana modal.
          * @param form Ventana del formulario
          * @return true si el formulario se cerró con Close(true), es decir, si se guardó

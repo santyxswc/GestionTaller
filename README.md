@@ -53,15 +53,33 @@ Todo queda en `%LOCALAPPDATA%\TallerMoreno`:
 
 - `taller.db`: base de datos SQLite (repuestos, ventas, clientes, proveedores, usuarios).
 - `fotos\`: fotos de los repuestos, reducidas automáticamente.
+- `copias\`: copias de seguridad automáticas.
 - `errores.log`: lo que salió mal y el detalle técnico, para revisarlo si alguien avisa de un problema.
 
-Para usar otra carpeta (por ejemplo, una sincronizada), copia `appsettings.example.json` como
-`appsettings.json` junto al ejecutable y escribe la ruta en `Datos:Carpeta`.
+Para usar otra carpeta de datos, copia `appsettings.example.json` como `appsettings.json` junto al
+ejecutable y escribe la ruta en `Datos:Carpeta`. No uses una carpeta sincronizada (OneDrive, Dropbox)
+para los datos: sincronizar la base de datos abierta puede dañarla. Para eso está `Copias:CarpetaExtra`.
 
-### Copia de seguridad
+### Copias de seguridad
 
-En el menú, **Copia de seguridad** (administrador) guarda un `.zip` con la base de datos y las fotos.
-Para restaurar: cierra el programa y descomprime el `.zip` en la carpeta de datos.
+- **Automáticas:** una al día, al abrir el programa (y cada hora revisa si ya se hizo, por si el computador
+  queda prendido). Se guardan las últimas 14 en `copias\`. Si en `Copias:CarpetaExtra` se escribe otra
+  carpeta (una USB o una carpeta de OneDrive), la copia también se deja allí. Así, si se daña el disco,
+  no se pierde todo.
+- **A mano:** en el menú, **Copia de seguridad** (administrador) guarda un `.zip` donde se elija.
+- **Antes de actualizar:** si una versión nueva cambia la base de datos, primero se guarda
+  `copias\antes-de-actualizar-….zip`.
+
+Para restaurar, en el menú, **Restaurar copia** (administrador): se elige el `.zip`, el programa guarda primero
+cómo está todo en `copias\antes-de-restaurar-….zip`, restaura y pide entrar de nuevo. No hace falta cerrar el
+programa ni descomprimir nada a mano.
+
+### Si el dueño olvida la contraseña
+
+Al crear la cuenta del dueño el programa muestra un **código de recuperación** para anotarlo en papel. En la
+entrada, **¿Olvidaste tu contraseña?** pide ese código y una contraseña nueva. Cada código sirve una vez: al
+usarlo se muestra uno nuevo. Desde el menú, **Código de recuperación** crea otro si se perdió el anterior.
+A un mecánico que olvide su contraseña se la pone nueva el dueño, desde **Usuarios**.
 
 ## Proyecto
 

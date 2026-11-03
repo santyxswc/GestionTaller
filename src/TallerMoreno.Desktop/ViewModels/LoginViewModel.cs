@@ -8,6 +8,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using TallerMoreno.Core.Services;
+using TallerMoreno.Core.Sesion;
 using TallerMoreno.Desktop.Services;
 using TallerMoreno.Desktop.Views;
 
@@ -24,6 +25,8 @@ namespace TallerMoreno.Desktop.ViewModels
         private readonly FabricaVistas _vistas;
         /** Último usuario recordado. */
         private readonly Preferencias _preferencias;
+        /** Usuario de la sesión, para saber si entró un administrador. */
+        private readonly ISesionUsuario _sesion;
         /** Ventana de inicio de sesión. */
         private readonly Window _window;
 
@@ -51,7 +54,9 @@ namespace TallerMoreno.Desktop.ViewModels
         private string errorMessage;
 
         /** Comando del botón Entrar o Crear cuenta. */
-        public IRelayCommand EntrarCommand { get; }
+        public IAsyncRelayCommand EntrarCommand { get; }
+        /** Abre la recuperación de la contraseña con el código. */
+        public IAsyncRelayCommand OlvideClaveCommand { get; }
 
         /**
          * @brief Crea el ViewModel de la ventana de inicio de sesión.
@@ -59,14 +64,18 @@ namespace TallerMoreno.Desktop.ViewModels
          * @param usuarios Reglas de negocio de usuarios
          * @param vistas Creación de ventanas y secciones
          * @param preferencias Último usuario recordado
+         * @param sesion Usuario de la sesión
          */
-        public LoginViewModel(Window window, UsuarioService usuarios, FabricaVistas vistas, Preferencias preferencias)
+        public LoginViewModel(Window window, UsuarioService usuarios, FabricaVistas vistas, Preferencias preferencias,
+                              ISesionUsuario sesion)
         {
             _usuarios = usuarios;
             _vistas = vistas;
             _preferencias = preferencias;
+            _sesion = sesion;
             _window = window;
-            EntrarCommand = new RelayCommand(Entrar);
+            EntrarCommand = new AsyncRelayCommand(Entrar);
+            OlvideClaveCommand = new AsyncRelayCommand(OlvideClave);
 
             try
             {
@@ -84,9 +93,26 @@ namespace TallerMoreno.Desktop.ViewModels
         public bool UsuarioRecordado => !PrimerUso && !string.IsNullOrEmpty(Username);
 
         /**
-         * @brief Verifica los datos, entra y abre la ventana principal.
+         * @brief Abre el formulario de recuperación y, si sale bien, muestra el código nuevo.
          */
-        private void Entrar()
+        private async Task OlvideClave()
+        {
+            var (ventana, vm) = _vistas.Ventana<RecuperarClaveView, RecuperarClaveViewModel>();
+            if (!await Dialogs.ShowForm(ventana))
+                return;
+            Username = vm.Usuario?.Trim().ToLowerInvariant();
+            Password = "";
+            ErrorMessage = null;
+            await Dialogs.CodigoRecuperacion(vm.CodigoNuevo);
+        }
+
+        /**
+         * @brief Verifica los datos, entra y abre la ventana principal.
+         *
+         * Si entra un administrador y todavía no hay código de recuperación (primer uso o datos
+         * de la versión 1.0), se crea uno y se muestra antes de seguir.
+         */
+        private async Task Entrar()
         {
             ErrorMessage = null;
             try
@@ -115,6 +141,9 @@ namespace TallerMoreno.Desktop.ViewModels
                     }
                 }
                 _preferencias.UltimoUsuario = Username.Trim().ToLowerInvariant();
+
+                if (_sesion.EsAdmin && !_usuarios.TieneCodigoRecuperacion())
+                    await Dialogs.CodigoRecuperacion(_usuarios.GenerarCodigoRecuperacion());
 
                 var (main, _) = _vistas.Ventana<MainWindow, MainWindowViewModel>();
                 if (Avalonia.Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)

@@ -1,5 +1,23 @@
 # Cambios
 
+## [1.2.0] - 2026-11-03
+
+### Agregado
+
+- Copia de seguridad automática diaria en `copias\` (se guardan las últimas 14), con carpeta extra opcional (`Copias:CarpetaExtra`) para una USB o la nube.
+- **Restaurar copia** desde el menú: revisa que la copia sea válida, guarda antes cómo estaba todo y no hay que cerrar el programa ni descomprimir a mano.
+- Código de recuperación para el dueño y **¿Olvidaste tu contraseña?** en la entrada.
+- Copia automática antes de que una versión nueva actualice la base de datos.
+
+### Cambiado
+
+- Si el programa ya está abierto, al abrirlo otra vez se trae al frente la ventana que hay en vez de abrir otra.
+- Los datos de una versión más nueva del programa no se abren; se pide instalar la última versión.
+
+### Corregido
+
+- Restaurar descomprimiendo el `.zip` sobre la carpeta de datos podía dañar la base de datos si quedaban los archivos `-wal` y `-shm`.
+
 ## [1.1.0] - 2026-11-03
 
 ### Agregado

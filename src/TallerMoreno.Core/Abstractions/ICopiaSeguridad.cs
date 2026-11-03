@@ -15,5 +15,12 @@ namespace TallerMoreno.Core.Abstractions
          * @param rutaZip Archivo .zip de destino
          */
         void Crear(string rutaZip);
+
+        /**
+         * @brief Reemplaza los datos actuales por los de una copia de seguridad.
+         * @param rutaZip Archivo .zip creado con Crear
+         * @exception InvalidOperationException Si el archivo no es una copia válida
+         */
+        void Restaurar(string rutaZip);
     }
 }

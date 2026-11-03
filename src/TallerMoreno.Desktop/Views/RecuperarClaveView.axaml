@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.RecuperarClaveView"
+        Title="Olvidé mi contraseña"
+        Width="480" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+  <StackPanel Margin="32,28">
+    <TextBlock Classes="titulo-ventana" Text="Olvidé mi contraseña"/>
+    <TextBlock Classes="subtitulo" Margin="0,4,0,8"
+               Text="Escribe el código de recuperación que anotaste al crear la cuenta del dueño. Si eres mecánico, pídele al dueño que te ponga una contraseña nueva."/>
+
+    <TextBlock Classes="etiqueta" Text="Usuario del dueño"/>
+    <TextBox Text="{Binding Usuario}"/>
+
+    <TextBlock Classes="etiqueta" Text="Código de recuperación"/>
+    <TextBox x:Name="txtCodigo" Text="{Binding Codigo}" Watermark="Ej: K7QM-3XPA-9HTW" FontFamily="Consolas, Courier New, monospace"/>
+
+    <TextBlock Classes="etiqueta" Text="Contraseña nueva"/>
+    <TextBox PasswordChar="•" Text="{Binding Nueva}"/>
+
+    <TextBlock Classes="etiqueta" Text="Repite la contraseña nueva"/>
+    <TextBox PasswordChar="•" Text="{Binding Repetir}"/>
+    <TextBlock Classes="ayuda" Text="Mínimo 4 caracteres."/>
+
+    <Border Classes="error" Margin="0,16,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}"/>
+    </Border>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,24,0,0">
+      <Button Classes="secundario" Content="Cancelar" Width="130" IsCancel="True" Command="{Binding CancelCommand}"/>
+      <Button Content="Cambiar contraseña" Width="200" IsDefault="True" Command="{Binding GuardarCommand}"/>
+    </StackPanel>
+  </StackPanel>
+</Window>

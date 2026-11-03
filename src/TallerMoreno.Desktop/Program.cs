@@ -22,6 +22,15 @@ namespace TallerMoreno.Desktop
         [STAThread]
         public static void Main(string[] args)
         {
+            // Dos ventanas sobre la misma base de datos confunden a quien vende: si ya está abierto,
+            // se trae al frente el que hay en vez de abrir otro.
+            using var unico = new Mutex(true, @"Local\TallerMoreno.Desktop", out bool esElPrimero);
+            if (!esElPrimero)
+            {
+                InstanciaUnica.MostrarLaQueYaEstaAbierta();
+                return;
+            }
+
             var cultura = TallerMoreno.Core.Formato.Cultura;
             CultureInfo.DefaultThreadCurrentCulture = cultura;
             CultureInfo.DefaultThreadCurrentUICulture = cultura;

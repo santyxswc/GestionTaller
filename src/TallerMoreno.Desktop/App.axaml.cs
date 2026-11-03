@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TallerMoreno.Core.Abstractions;
@@ -14,6 +15,7 @@ using TallerMoreno.Desktop.Converters;
 using TallerMoreno.Desktop.Services;
 using TallerMoreno.Desktop.ViewModels;
 using TallerMoreno.Desktop.Views;
+using TallerMoreno.Infrastructure.Archivos;
 using TallerMoreno.Infrastructure.Database;
 
 namespace TallerMoreno.Desktop
@@ -74,13 +76,51 @@ namespace TallerMoreno.Desktop
             Errores.UsarCarpeta(carpetaDatos);
 
             var servicios = new ServiceCollection()
-                .AgregarTaller(carpetaDatos)
+                .AgregarTaller(carpetaDatos, configuration["Copias:CarpetaExtra"])
                 .BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
 
-            servicios.GetRequiredService<InicializadorBaseDatos>().Inicializar();
+            var inicializador = servicios.GetRequiredService<InicializadorBaseDatos>();
+            var copias = servicios.GetRequiredService<CopiasAutomaticas>();
+            int version = inicializador.VersionGuardada();
+            if (version > 0 && version < InicializadorBaseDatos.VersionEsquema)
+                copias.HacerAntesDe("antes-de-actualizar");
+            inicializador.Inicializar();
             Convertidores.Fotos = servicios.GetRequiredService<IAlmacenFotos>();
 
+            ProgramarCopiasDiarias(copias);
+
             return servicios.GetRequiredService<FabricaVistas>().Ventana<LoginView, LoginViewModel>().Ventana;
+        }
+
+        /** Revisa cada hora si ya se hizo la copia del día, por si el computador queda prendido varios días. */
+        private static DispatcherTimer _relojCopias;
+
+        /**
+         * @brief Hace la copia del día al abrir el programa y vuelve a revisar cada hora.
+         *
+         * Corre en segundo plano para no demorar la entrada; si falla, queda anotado en errores.log.
+         * @param copias Copias diarias
+         */
+        private static void ProgramarCopiasDiarias(CopiasAutomaticas copias)
+        {
+            void Revisar() => Task.Run(() =>
+            {
+                try
+                {
+                    copias.HacerSiFalta(DateTime.Today);
+                    if (copias.ErrorCarpetaExtra != null)
+                        Errores.Registrar(copias.ErrorCarpetaExtra, "No se pudo dejar la copia diaria en la carpeta extra");
+                }
+                catch (Exception ex)
+                {
+                    Errores.Registrar(ex, "Copia de seguridad diaria");
+                }
+            });
+
+            Revisar();
+            _relojCopias = new DispatcherTimer { Interval = TimeSpan.FromHours(1) };
+            _relojCopias.Tick += (_, _) => Revisar();
+            _relojCopias.Start();
         }
     }
 }

@@ -14,12 +14,12 @@ namespace TallerMoreno.Infrastructure.Database
      *
      * No hay que instalar ni configurar nada: si el archivo de la base de datos no existe
      * se crea vacío con todas sus tablas. PRAGMA user_version guarda la versión del esquema
-     * para futuras migraciones.
+     * y cada versión nueva se aplica encima de la anterior sin tocar los datos.
      */
     public sealed class InicializadorBaseDatos
     {
         /** Versión actual del esquema. */
-        public const int VersionEsquema = 1;
+        public const int VersionEsquema = 2;
 
         /** Fábrica de conexiones a la base de datos. */
         private readonly IDbConnectionFactory _conexiones;
@@ -31,7 +31,18 @@ namespace TallerMoreno.Infrastructure.Database
         public InicializadorBaseDatos(IDbConnectionFactory conexiones) => _conexiones = conexiones;
 
         /**
-         * @brief Crea las tablas que falten.
+         * @brief Versión del esquema guardada en la base de datos.
+         * @return 0 si la base de datos es nueva
+         */
+        public int VersionGuardada()
+        {
+            using (IDbConnection db = _conexiones.Crear())
+                return db.ExecuteScalar<int>("PRAGMA user_version;");
+        }
+
+        /**
+         * @brief Crea las tablas que falten y aplica las versiones nuevas del esquema.
+         * @exception InvalidOperationException Si la base de datos es de una versión más nueva del programa
          */
         public void Inicializar()
         {
@@ -40,20 +51,37 @@ namespace TallerMoreno.Infrastructure.Database
                 db.Open();
                 db.Execute("PRAGMA journal_mode = WAL;");
                 int version = db.ExecuteScalar<int>("PRAGMA user_version;");
-                if (version >= VersionEsquema)
+                if (version > VersionEsquema)
+                    throw new InvalidOperationException(MensajeVersionNueva);
+                if (version == VersionEsquema)
                     return;
 
                 using (var tran = db.BeginTransaction())
                 {
-                    db.Execute(Esquema, transaction: tran);
+                    if (version < 1)
+                        db.Execute(EsquemaV1, transaction: tran);
+                    if (version < 2)
+                        db.Execute(EsquemaV2, transaction: tran);
                     db.Execute($"PRAGMA user_version = {VersionEsquema};", transaction: tran);
                     tran.Commit();
                 }
             }
         }
 
+        /** Mensaje cuando la base de datos la creó una versión más nueva del programa. */
+        public const string MensajeVersionNueva =
+            "Estos datos son de una versión más nueva de Taller Moreno. Instala la última versión del programa.";
+
+        /** Versión 2: ajustes generales, como el código de recuperación del dueño. */
+        private const string EsquemaV2 = @"
+CREATE TABLE IF NOT EXISTS ajuste (
+    clave  TEXT PRIMARY KEY,
+    valor  TEXT NOT NULL
+);
+";
+
         /** Tablas e índices (versión 1). Los valores en pesos se guardan como enteros. */
-        private const string Esquema = @"
+        private const string EsquemaV1 = @"
 CREATE TABLE IF NOT EXISTS usuario (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
     nombre          TEXT    NOT NULL,

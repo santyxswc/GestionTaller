@@ -9,6 +9,7 @@ using TallerMoreno.Core.Models;
 using TallerMoreno.Core.Services;
 using TallerMoreno.Core.Sesion;
 using TallerMoreno.Infrastructure;
+using TallerMoreno.Infrastructure.Archivos;
 using TallerMoreno.Infrastructure.Database;
 
 namespace TallerMoreno.Tests
@@ -65,6 +66,12 @@ namespace TallerMoreno.Tests
         public ReporteService Reportes => _servicios.GetRequiredService<ReporteService>();
         /** Excel y copias. */
         public ExportacionService Exportacion => _servicios.GetRequiredService<ExportacionService>();
+        /** Copias diarias. */
+        public CopiasAutomaticas Copias => _servicios.GetRequiredService<CopiasAutomaticas>();
+        /** Creación y migración de la base de datos. */
+        public InicializadorBaseDatos Inicializador => _servicios.GetRequiredService<InicializadorBaseDatos>();
+        /** Ruta de la base de datos. */
+        public string RutaBaseDatos => Path.Combine(Carpeta, RegistroInfraestructura.ArchivoBaseDatos);
 
         /**
          * @brief Registra un repuesto de prueba.

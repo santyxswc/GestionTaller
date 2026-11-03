@@ -35,22 +35,27 @@ namespace TallerMoreno.Infrastructure
          * @brief Registra las implementaciones de los contratos de Core.
          * @param servicios Colección donde se registran
          * @param carpetaDatos Carpeta de datos; vacía usa CarpetaPorDefecto
+         * @param carpetaCopiasExtra Carpeta adicional para las copias diarias (USB, nube), o null
          * @return La misma colección, para encadenar
          */
-        public static IServiceCollection AgregarInfraestructura(this IServiceCollection servicios, string carpetaDatos = null)
+        public static IServiceCollection AgregarInfraestructura(this IServiceCollection servicios, string carpetaDatos = null,
+                                                                string carpetaCopiasExtra = null)
         {
             string carpeta = string.IsNullOrWhiteSpace(carpetaDatos) ? CarpetaPorDefecto : carpetaDatos;
             Directory.CreateDirectory(carpeta);
             string rutaBaseDatos = Path.Combine(carpeta, ArchivoBaseDatos);
             string carpetaFotos = Path.Combine(carpeta, "fotos");
+            var copia = new CopiaSeguridadZip(rutaBaseDatos, carpetaFotos);
 
             servicios.AddSingleton<IDbConnectionFactory>(new SqliteConnectionFactory(rutaBaseDatos));
             servicios.AddSingleton<InicializadorBaseDatos>();
             servicios.AddSingleton<IHasherClaves, HasherPbkdf2>();
             servicios.AddSingleton<IAlmacenFotos>(new AlmacenFotos(carpetaFotos));
             servicios.AddSingleton<IExportadorExcel, ExportadorExcel>();
-            servicios.AddSingleton<ICopiaSeguridad>(new CopiaSeguridadZip(rutaBaseDatos, carpetaFotos));
+            servicios.AddSingleton<ICopiaSeguridad>(copia);
+            servicios.AddSingleton(new CopiasAutomaticas(copia, Path.Combine(carpeta, "copias"), carpetaCopiasExtra));
 
+            servicios.AddSingleton<IAjusteRepository, AjusteRepository>();
             servicios.AddSingleton<IUsuarioRepository, UsuarioRepository>();
             servicios.AddSingleton<IRepuestoRepository, RepuestoRepository>();
             servicios.AddSingleton<IClienteRepository, ClienteRepository>();

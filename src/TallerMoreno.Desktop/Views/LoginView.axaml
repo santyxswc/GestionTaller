@@ -5,7 +5,14 @@
         Width="520" SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterScreen"
+        Icon="/Assets/icono.ico"
         Background="{StaticResource FondoBrush}">
+  <Window.Styles>
+    <!-- El enlace general es para el menú oscuro; aquí el fondo es claro. -->
+    <Style Selector="Button.enlace:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Foreground" Value="#0A6FE0"/>
+    </Style>
+  </Window.Styles>
   <StackPanel Margin="48,40,48,44">
     <Border Width="84" Height="84" CornerRadius="22" HorizontalAlignment="Center">
       <Border.Background>
@@ -52,5 +59,9 @@
         <TextBlock Text="Crear cuenta y entrar" IsVisible="{Binding PrimerUso}"/>
       </Panel>
     </Button>
+
+    <Button Classes="enlace" Content="¿Olvidaste tu contraseña?" HorizontalAlignment="Center" Margin="0,12,0,0"
+            Foreground="{StaticResource AcentoBrush}" IsVisible="{Binding !PrimerUso}"
+            Command="{Binding OlvideClaveCommand}"/>
   </StackPanel>
 </Window>

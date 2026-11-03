@@ -1,6 +1,11 @@
 # Cambios
 
-## [Sin publicar]
+## [1.1.0] - 2026-11-03
+
+### Agregado
+
+- Instalador para Windows (Inno Setup) con ícono propio y acceso directo en el escritorio.
+- Workflow de GitHub que crea el instalador y lo publica en Releases al subir una etiqueta `v*`.
 
 ### Cambiado
 

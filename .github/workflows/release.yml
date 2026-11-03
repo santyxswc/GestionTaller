@@ -1,0 +1,54 @@
+name: Instalador
+
+# Al subir una etiqueta como v1.1.0 se crea el instalador y se publica en Releases.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  instalador:
+    name: Crear instalador de Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Versión
+        id: version
+        shell: pwsh
+        run: |
+          $v = if ($env:GITHUB_REF_TYPE -eq 'tag') { $env:GITHUB_REF_NAME.TrimStart('v') } else { '0.0.0-prueba' }
+          "valor=$v" >> $env:GITHUB_OUTPUT
+
+      - name: Publicar el programa
+        run: dotnet publish src/TallerMoreno.Desktop -c Release -r win-x64 --self-contained -o publicar -p:Version=${{ steps.version.outputs.valor }} -p:DebugType=none
+
+      - name: Instalar Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+
+      - name: Crear el instalador
+        shell: pwsh
+        run: '& "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DVersion=${{ steps.version.outputs.valor }} instalador/TallerMoreno.iss'
+
+      - name: Guardar el instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: instalador
+          path: instalador/salida/*.exe
+
+      - name: Publicar en Releases
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $notas = "Descarga TallerMoreno-Instalador-${{ steps.version.outputs.valor }}.exe y ábrelo. Si Windows muestra 'Windows protegió su PC', toca 'Más información' y luego 'Ejecutar de todas formas'."
+          gh release create $env:GITHUB_REF_NAME (Get-ChildItem instalador/salida/*.exe).FullName --title "Taller Moreno ${{ steps.version.outputs.valor }}" --notes $notas

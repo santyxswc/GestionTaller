@@ -3,23 +3,39 @@
         xmlns:conv="using:TallerMoreno.Desktop.Converters"
         x:Class="TallerMoreno.Desktop.Views.RepuestoDetalleView"
         Title="{Binding Repuesto.Nombre}"
-        Width="960" Height="680" MinWidth="820" MinHeight="560"
+        Width="1180" Height="680" MinWidth="980" MinHeight="560"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         Background="{StaticResource FondoBrush}">
-  <Grid ColumnDefinitions="380,*" Margin="28">
+  <Window.Styles>
+    <!-- El historial tiene seis columnas en poco espacio: márgenes más cortos para que quepan los títulos. -->
+    <Style Selector="DataGrid.historial DataGridColumnHeader">
+      <Setter Property="Padding" Value="10,0"/>
+    </Style>
+    <Style Selector="DataGrid.historial DataGridCell">
+      <Setter Property="Padding" Value="0"/>
+    </Style>
+  </Window.Styles>
+  <Grid ColumnDefinitions="340,*" Margin="28">
     <!-- Foto y unidades -->
     <StackPanel Spacing="16">
       <Border Classes="tarjeta" Height="320" ClipToBounds="True">
         <Panel Background="#F2F2F7">
-          <Image Source="{Binding Repuesto.Categoria, Converter={x:Static conv:Convertidores.ImagenCategoria}}"
-                 Stretch="UniformToFill" IsVisible="{Binding !Repuesto.TieneFoto}"/>
+          <Image Stretch="UniformToFill" IsVisible="{Binding Repuesto.Foto, Converter={x:Static conv:Convertidores.SinFotoLegible}}">
+            <Image.Source>
+              <MultiBinding Converter="{x:Static conv:Convertidores.ImagenReferencia}">
+                <Binding Path="Repuesto.Nombre"/>
+                <Binding Path="Repuesto.Categoria"/>
+              </MultiBinding>
+            </Image.Source>
+          </Image>
           <Border Background="#99000000" CornerRadius="8" Padding="10,4" Margin="12"
-                  HorizontalAlignment="Left" VerticalAlignment="Bottom" IsVisible="{Binding !Repuesto.TieneFoto}">
+                  HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                  IsVisible="{Binding Repuesto.Foto, Converter={x:Static conv:Convertidores.SinFotoLegible}}">
             <TextBlock Text="Foto de referencia" Foreground="White" FontSize="13"/>
           </Border>
           <Image Source="{Binding Repuesto.Foto, Converter={x:Static conv:Convertidores.Foto}, ConverterParameter=760}"
-                 Stretch="Uniform" IsVisible="{Binding Repuesto.TieneFoto}"/>
+                 Stretch="Uniform" IsVisible="{Binding Repuesto.Foto, Converter={x:Static conv:Convertidores.FotoLegible}}"/>
         </Panel>
       </Border>
       <Border Classes="tarjeta" Padding="20">
@@ -94,14 +110,14 @@
               Margin="0,14,0,0" IsCancel="True" Command="{Binding CerrarCommand}"/>
 
       <Border Classes="tarjeta" ClipToBounds="True">
-        <DataGrid ItemsSource="{Binding Movimientos}">
+        <DataGrid Classes="historial" ItemsSource="{Binding Movimientos}" CanUserSortColumns="False">
           <DataGrid.Columns>
-            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yy HH:mm}'}" Width="130"/>
-            <DataGridTextColumn Header="Qué pasó" Binding="{Binding Tipo}" Width="100"/>
-            <DataGridTextColumn Header="Unid." Binding="{Binding CantidadTexto}" Width="70"/>
-            <DataGridTextColumn Header="Quedaron" Binding="{Binding StockResultante}" Width="90"/>
-            <DataGridTextColumn Header="Detalle" Binding="{Binding Referencia}" Width="*"/>
-            <DataGridTextColumn Header="Quién" Binding="{Binding UsuarioNombre}" Width="120"/>
+            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yy HH:mm}'}" Width="Auto"/>
+            <DataGridTextColumn Header="Qué pasó" Binding="{Binding Tipo}" Width="Auto"/>
+            <DataGridTextColumn Header="Unid." Binding="{Binding CantidadTexto}" Width="Auto"/>
+            <DataGridTextColumn Header="Quedaron" Binding="{Binding StockResultante}" Width="Auto"/>
+            <DataGridTextColumn Header="Detalle" Binding="{Binding Referencia}" Width="*" MinWidth="80"/>
+            <DataGridTextColumn Header="Quién" Binding="{Binding UsuarioNombre}" Width="Auto"/>
           </DataGrid.Columns>
         </DataGrid>
       </Border>

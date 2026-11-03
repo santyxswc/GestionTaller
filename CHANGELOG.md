@@ -1,5 +1,13 @@
 # Cambios
 
+## [1.2.1] - 2026-11-03
+
+### Corregido
+
+- La foto de referencia ahora se elige primero por el nombre del repuesto y después por la categoría: una "Batería" guardada en "Eléctricos" mostraba un alternador.
+- Si la foto propia de un repuesto se borró o está dañada, se muestra la de referencia en vez de un cuadro vacío. Ningún repuesto queda sin imagen.
+- La tabla "Historial de unidades" del detalle cortaba los títulos de las columnas.
+
 ## [1.2.0] - 2026-11-03
 
 ### Agregado

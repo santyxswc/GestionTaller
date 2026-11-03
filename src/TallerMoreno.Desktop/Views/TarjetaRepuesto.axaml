@@ -7,10 +7,17 @@
   <Grid RowDefinitions="130,Auto">
     <Border CornerRadius="16,16,0,0" ClipToBounds="True" Background="#F2F2F7">
       <Panel>
-        <Image Source="{Binding Categoria, Converter={x:Static conv:Convertidores.ImagenCategoria}}"
-               Stretch="UniformToFill" IsVisible="{Binding !TieneFoto}"/>
+        <!-- Sin foto, o si el archivo de la foto se perdió, se ve la de referencia: nunca queda vacío. -->
+        <Image Stretch="UniformToFill" IsVisible="{Binding Foto, Converter={x:Static conv:Convertidores.SinFotoLegible}}">
+          <Image.Source>
+            <MultiBinding Converter="{x:Static conv:Convertidores.ImagenReferencia}">
+              <Binding Path="Nombre"/>
+              <Binding Path="Categoria"/>
+            </MultiBinding>
+          </Image.Source>
+        </Image>
         <Image Source="{Binding Foto, Converter={x:Static conv:Convertidores.Foto}}" Stretch="UniformToFill"
-               IsVisible="{Binding TieneFoto}"/>
+               IsVisible="{Binding Foto, Converter={x:Static conv:Convertidores.FotoLegible}}"/>
       </Panel>
     </Border>
     <StackPanel Grid.Row="1" Margin="14,10,14,14" Spacing="2">

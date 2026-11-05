@@ -24,7 +24,8 @@ namespace TallerMoreno.Infrastructure.Repositories
             SELECT e.id AS Id, e.fecha AS Fecha, e.proveedor_id AS ProveedorId, p.nombre AS ProveedorNombre,
                    e.factura_proveedor AS FacturaProveedor, e.usuario_id AS UsuarioId, u.nombre AS UsuarioNombre,
                    e.total AS Total,
-                   (SELECT COALESCE(SUM(d.cantidad), 0) FROM entrada_detalle d WHERE d.entrada_id = e.id) AS Unidades
+                   (SELECT COALESCE(SUM(d.cantidad), 0) FROM entrada_detalle d WHERE d.entrada_id = e.id) AS Unidades,
+                   (SELECT COALESCE(SUM(g.valor), 0) FROM pago_proveedor g WHERE g.entrada_id = e.id) AS Pagado
             FROM entrada e
             JOIN proveedor p ON p.id = e.proveedor_id
             JOIN usuario u ON u.id = e.usuario_id";
@@ -41,13 +42,14 @@ namespace TallerMoreno.Infrastructure.Repositories
          * @param usuarioId Usuario que recibe
          * @param facturaProveedor Número de la factura del proveedor
          * @param lineas Repuestos, cantidades y costos (sin repetidos)
+         * @param pagado Lo que se le pagó al proveedor al recibir; el resto queda como deuda
          * @return Número de la entrada
          * @exception InvalidOperationException Si un repuesto no existe; no se guarda nada
          *
          * Un costo de 0 deja el costo anterior del repuesto. Si el repuesto no tenía proveedor
          * habitual, queda con este.
          */
-        public int Insert(int proveedorId, int usuarioId, string facturaProveedor, IEnumerable<LineaDocumento> lineas)
+        public int Insert(int proveedorId, int usuarioId, string facturaProveedor, IEnumerable<LineaDocumento> lineas, decimal pagado)
         {
             using (IDbConnection db = _conexiones.Crear())
             {
@@ -81,6 +83,11 @@ namespace TallerMoreno.Infrastructure.Repositories
                         string referencia = string.IsNullOrEmpty(facturaProveedor) ? $"Entrada N° {id}" : $"Entrada N° {id} · factura {facturaProveedor}";
                         Sql.RegistrarMovimiento(db, tran, fecha, d.RepuestoId, MovimientoInventario.TipoEntrada, d.Cantidad, referencia, usuarioId);
                     }
+
+                    if (pagado > 0)
+                        db.Execute(@"INSERT INTO pago_proveedor (fecha, proveedor_id, entrada_id, valor, usuario_id)
+                                     VALUES (@Fecha, @ProveedorId, @EntradaId, @Valor, @UsuarioId)",
+                                   new { Fecha = fecha, ProveedorId = proveedorId, EntradaId = id, Valor = pagado, UsuarioId = usuarioId }, tran);
 
                     tran.Commit();
                     return id;

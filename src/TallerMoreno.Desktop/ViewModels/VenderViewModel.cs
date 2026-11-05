@@ -83,7 +83,21 @@ namespace TallerMoreno.Desktop.ViewModels
 
         /** Total a cobrar. */
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TextoFiado))]
         private decimal total;
+
+        /** Indica si el cliente queda debiendo parte de la venta (fiado). */
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TextoFiado))]
+        private bool fiado;
+
+        /** Lo que el cliente paga ahora si la venta se fía. */
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TextoFiado))]
+        private decimal? abono;
+
+        /** Lo que queda debiendo el cliente, como "Queda debiendo $250.000". */
+        public string TextoFiado => $"Queda debiendo {Formato.Moneda(Math.Max(0, Total - (Abono ?? 0)))}";
 
         /** Unidades en la venta. */
         [ObservableProperty]
@@ -241,6 +255,8 @@ namespace TallerMoreno.Desktop.ViewModels
             Carrito.Clear();
             Cliente = null;
             MetodoPago = MetodosPago[0];
+            Fiado = false;
+            Abono = null;
         }
 
         /**
@@ -273,8 +289,11 @@ namespace TallerMoreno.Desktop.ViewModels
             try
             {
                 var lineas = Carrito.Select(l => new LineaDocumento { RepuestoId = l.Repuesto.Id, Cantidad = l.Cantidad });
-                int numero = _ventas.Vender(Cliente?.Id, MetodoPago, lineas);
-                Avisos.Exito($"Venta N° {numero} registrada · {Formato.Moneda(Total)} en {MetodoPago.ToLower()}");
+                decimal? abono = Fiado ? Math.Round(Abono ?? 0) : null;
+                int numero = _ventas.Vender(Cliente?.Id, MetodoPago, lineas, abono: abono);
+                Avisos.Exito(abono.HasValue
+                    ? $"Venta N° {numero} fiada a {Cliente.Nombre} · queda debiendo {Formato.Moneda(Total - abono.Value)}"
+                    : $"Venta N° {numero} registrada · {Formato.Moneda(Total)} en {MetodoPago.ToLower()}");
                 Vaciar();
                 Filtrar();
             }

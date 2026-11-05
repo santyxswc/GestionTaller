@@ -18,10 +18,11 @@ namespace TallerMoreno.Core.Abstractions
          * @param usuarioId Usuario que recibe
          * @param facturaProveedor Número de la factura del proveedor
          * @param lineas Repuestos, cantidades y costos (sin repetidos)
+         * @param pagado Lo que se le pagó al proveedor al recibir; el resto queda como deuda
          * @return Número de la entrada
          * @exception InvalidOperationException Si un repuesto no existe; no se guarda nada
          */
-        int Insert(int proveedorId, int usuarioId, string facturaProveedor, IEnumerable<LineaDocumento> lineas);
+        int Insert(int proveedorId, int usuarioId, string facturaProveedor, IEnumerable<LineaDocumento> lineas, decimal pagado);
 
         /**
          * @brief Busca una entrada sin sus líneas.

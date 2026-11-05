@@ -17,7 +17,8 @@
              Watermark="🔍  Buscar por nombre, placa, celular o cédula"/>
 
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
-      <Button Content="🧾  Ver compras" Command="{Binding ComprasCommand}"/>
+      <Button Content="🧾  Compras y abonos" Command="{Binding ComprasCommand}"/>
+      <Button Classes="exito" Content="💵  Registrar abono" Command="{Binding AbonoCommand}"/>
       <Button Classes="secundario" Content="✏️  Editar" Command="{Binding EditarCommand}"/>
       <Button Classes="secundario" Content="Eliminar" Foreground="{StaticResource PeligroBrush}"
               IsVisible="{Binding EsAdmin}" Command="{Binding EliminarCommand}"/>
@@ -27,13 +28,19 @@
       <Border Classes="tarjeta" ClipToBounds="True" IsVisible="{Binding !SinResultados}">
         <DataGrid x:Name="tabla" ItemsSource="{Binding Clientes}" SelectedItem="{Binding Seleccionado}">
           <DataGrid.Columns>
-            <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="2*"/>
-            <DataGridTextColumn Header="Placa" Binding="{Binding Placa}" Width="110"/>
-            <DataGridTextColumn Header="Vehículo" Binding="{Binding Vehiculo}" Width="*"/>
-            <DataGridTextColumn Header="Celular" Binding="{Binding Telefono}" Width="140"/>
-            <DataGridTextColumn Header="Compras" Binding="{Binding NumeroCompras}" Width="100"/>
-            <DataGridTextColumn Header="Total comprado" Binding="{Binding TotalComprado, StringFormat='{}{0:C0}'}" Width="150"/>
-            <DataGridTextColumn Header="Última compra" Binding="{Binding UltimaCompra, StringFormat='{}{0:dd/MM/yyyy}'}" Width="130"/>
+            <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="2*" MinWidth="170"/>
+            <DataGridTextColumn Header="Placa" Binding="{Binding Placa}" Width="Auto"/>
+            <DataGridTextColumn Header="Vehículo" Binding="{Binding Vehiculo}" Width="*" MinWidth="80"/>
+            <DataGridTextColumn Header="Total comprado" Binding="{Binding TotalComprado, StringFormat='{}{0:C0}'}" Width="Auto"/>
+            <DataGridTemplateColumn Header="Te debe" Width="Auto" SortMemberPath="Deuda">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <TextBlock Classes="deuda" Classes.debe="{Binding TieneDeuda}" Text="{Binding DeudaTexto}"/>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="Celular" Binding="{Binding Telefono}" Width="Auto"/>
+            <DataGridTextColumn Header="Última compra" Binding="{Binding UltimaCompra, StringFormat='{}{0:dd/MM/yyyy}'}" Width="Auto"/>
           </DataGrid.Columns>
         </DataGrid>
       </Border>

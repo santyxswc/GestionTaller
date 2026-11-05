@@ -77,7 +77,21 @@ namespace TallerMoreno.Desktop.ViewModels
 
         /** Total de la entrada. */
         [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TextoDeuda))]
         private decimal total;
+
+        /** Indica si se le quedó debiendo parte de la factura al proveedor. */
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TextoDeuda))]
+        private bool quedeDebiendo;
+
+        /** Lo que se le pagó al proveedor al recibir, si se quedó debiendo. */
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TextoDeuda))]
+        private decimal? pagado;
+
+        /** Lo que queda debiendo, como "Le quedas debiendo $150.000". */
+        public string TextoDeuda => $"Le quedas debiendo {Formato.Moneda(Math.Max(0, Total - (Pagado ?? 0)))}";
 
         /** Error de validación o de guardado. */
         [ObservableProperty]
@@ -205,8 +219,10 @@ namespace TallerMoreno.Desktop.ViewModels
             try
             {
                 var lineas = Lineas.Select(l => new LineaDocumento { RepuestoId = l.Repuesto.Id, Cantidad = l.Cantidad, PrecioUnitario = l.Costo });
-                int numero = _entradas.Registrar(Proveedor?.Id ?? 0, Factura, lineas);
-                _avisos.Exito($"Entrada N° {numero}: {Lineas.Sum(l => l.Cantidad)} unidades sumadas al inventario.");
+                decimal? pagado = QuedeDebiendo ? Math.Round(Pagado ?? 0) : null;
+                int numero = _entradas.Registrar(Proveedor?.Id ?? 0, Factura, lineas, pagado);
+                string deuda = pagado.HasValue && pagado < Total ? $" Le quedas debiendo {Formato.Moneda(Total - pagado.Value)} a {Proveedor.Nombre}." : "";
+                _avisos.Exito($"Entrada N° {numero}: {Lineas.Sum(l => l.Cantidad)} unidades sumadas al inventario.{deuda}");
                 _window.Close(true);
             }
             catch (Exception ex)

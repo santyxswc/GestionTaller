@@ -19,10 +19,12 @@ namespace TallerMoreno.Core.Abstractions
          * @param metodoPago Método de pago
          * @param notas Notas de la venta
          * @param lineas Repuestos y cantidades (sin repetidos)
+         * @param abono Lo que el cliente paga ahora si la venta se fía, o null si paga todo
          * @return Número de la venta
-         * @exception InvalidOperationException Si un repuesto no existe o no alcanza el stock; no se guarda nada
+         * @exception InvalidOperationException Si un repuesto no existe, no alcanza el stock o el abono pasa
+         *            del total; no se guarda nada
          */
-        int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas);
+        int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas, decimal? abono);
 
         /**
          * @brief Busca una venta sin sus líneas.

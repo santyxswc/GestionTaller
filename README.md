@@ -8,10 +8,10 @@ botones grandes, pocas pantallas y lo justo en cada una.
 
 | Sección | Para qué sirve |
 | --- | --- |
-| 🛒 **Vender** (F1) | Tocar los repuestos (con foto) para agregarlos, elegir el cliente si se quiere, cómo paga y **Cobrar**. Las unidades se descuentan solas del inventario. |
+| 🛒 **Vender** (F1) | Tocar los repuestos (con foto) para agregarlos, elegir el cliente si se quiere, cómo paga y **Cobrar**. Con **Queda debiendo (fiado)** el cliente paga una parte o nada y el resto queda anotado. Las unidades se descuentan solas del inventario. |
 | 📦 **Inventario** (F2) | Tarjetas con foto, unidades y precio. Buscar, filtrar por categoría, ver **solo lo que hay que pedir**, registrar **Llegó mercancía** y **Descargar Excel** en cualquier momento. |
-| 👥 **Clientes** (F3) | Nombre, placa, vehículo y celular. Muestra **cuánto ha comprado cada cliente** y el detalle de cada compra. |
-| 🚚 **Proveedores** (F4) | A quién se le compra, cuánto se le ha comprado y cada entrada de mercancía. |
+| 👥 **Clientes** (F3) | Nombre, placa, vehículo y celular. Muestra **cuánto ha comprado y cuánto te debe cada cliente**, el detalle de cada compra y **Registrar abono** cuando paga lo que debía. |
+| 🚚 **Proveedores** (F4) | A quién se le compra, **cuánto se le ha comprado, cuánto se le ha pagado y cuánto se le debe**, cada entrada de mercancía y **Registrar pago** para ir pagando lo que se quedó debiendo. |
 | 🧾 **Historial de ventas** (F5) | Ventas de hoy, la semana, el mes o el año, con totales y el detalle de cada venta. |
 
 ### Conteo de unidades
@@ -24,6 +24,18 @@ Las unidades nunca se escriben a mano después de crear el repuesto: cambian sol
 - **Ajustar unidades** (administrador) → para conteos físicos, daños o pérdidas, con el motivo.
 
 Cada repuesto tiene un mínimo: cuando quedan esas unidades o menos sale marcado **por pedir**.
+
+### Lo que se debe
+
+- **A un proveedor:** en **Llegó mercancía**, marcar **Le quedé debiendo parte** y escribir cuánto se pagó.
+  Lo que falta queda en la columna **Le debes** de Proveedores. Cada pago posterior se registra con
+  **Registrar pago** (cuánto, cómo y una nota, por ejemplo el número del comprobante).
+- **Un cliente:** en **Vender**, elegir el cliente, marcar **Queda debiendo (fiado)** y escribir cuánto abona
+  ahora (puede ser 0). Lo que falta queda en la columna **Te debe** de Clientes y se va bajando con **Registrar abono**.
+- No se puede pagar ni abonar más de lo que se debe. Si un pago o abono se anotó mal, el administrador lo borra
+  tocando dos veces su fila en **Entradas y pagos** o **Compras y abonos**.
+- Al anular una venta fiada, su deuda desaparece.
+- Al actualizar desde una versión anterior, todo lo que ya estaba registrado queda como pagado completo.
 
 ### Usuarios
 

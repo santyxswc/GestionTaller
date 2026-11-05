@@ -20,15 +20,15 @@ namespace TallerMoreno.Infrastructure.Repositories
         /** Fábrica de conexiones a la base de datos. */
         private readonly IDbConnectionFactory _conexiones;
 
-        /** Proveedores con el total, el número y la fecha de sus entradas. */
+        /** Proveedores con el total, el número y la fecha de sus entradas, y lo que se les ha pagado. */
         private const string SelectSql = @"
             SELECT p.id AS Id, p.nombre AS Nombre, p.nit AS Nit, p.contacto AS Contacto, p.telefono AS Telefono,
                    p.correo AS Correo, p.direccion AS Direccion, p.notas AS Notas,
-                   COALESCE(SUM(e.total), 0) AS TotalComprado,
-                   COUNT(e.id) AS NumeroEntradas,
-                   MAX(e.fecha) AS UltimaEntrada
-            FROM proveedor p
-            LEFT JOIN entrada e ON e.proveedor_id = p.id";
+                   (SELECT COALESCE(SUM(e.total), 0) FROM entrada e WHERE e.proveedor_id = p.id) AS TotalComprado,
+                   (SELECT COUNT(*) FROM entrada e WHERE e.proveedor_id = p.id) AS NumeroEntradas,
+                   (SELECT MAX(e.fecha) FROM entrada e WHERE e.proveedor_id = p.id) AS UltimaEntrada,
+                   (SELECT COALESCE(SUM(g.valor), 0) FROM pago_proveedor g WHERE g.proveedor_id = p.id) AS TotalPagado
+            FROM proveedor p";
 
         /**
          * @brief Crea el repositorio.
@@ -45,7 +45,7 @@ namespace TallerMoreno.Infrastructure.Repositories
         {
             using (IDbConnection db = _conexiones.Crear())
             {
-                var proveedores = db.Query<Proveedor>(SelectSql + " GROUP BY p.id ORDER BY p.nombre COLLATE NOCASE");
+                var proveedores = db.Query<Proveedor>(SelectSql + " ORDER BY p.nombre COLLATE NOCASE");
                 return proveedores.Where(p => Texto.Coincide(texto, p.Nombre, p.Nit, p.Contacto, p.Telefono)).ToList();
             }
         }
@@ -58,7 +58,7 @@ namespace TallerMoreno.Infrastructure.Repositories
         public Proveedor GetById(int id)
         {
             using (IDbConnection db = _conexiones.Crear())
-                return db.QueryFirstOrDefault<Proveedor>(SelectSql + " WHERE p.id = @Id GROUP BY p.id", new { Id = id });
+                return db.QueryFirstOrDefault<Proveedor>(SelectSql + " WHERE p.id = @Id", new { Id = id });
         }
 
         /**
@@ -121,6 +121,55 @@ namespace TallerMoreno.Infrastructure.Repositories
         {
             using (IDbConnection db = _conexiones.Crear())
                 return db.Execute("DELETE FROM proveedor WHERE id = @Id", new { Id = id }) > 0;
+        }
+
+        /**
+         * @brief Pagos hechos a un proveedor, incluidos los hechos al recibir mercancía.
+         * @param proveedorId Proveedor
+         * @return Pagos, del más reciente al más antiguo
+         */
+        public IEnumerable<Pago> Pagos(int proveedorId)
+        {
+            using (IDbConnection db = _conexiones.Crear())
+                return db.Query<Pago>(@"
+                    SELECT g.id AS Id, g.fecha AS Fecha, g.valor AS Valor, g.metodo_pago AS MetodoPago, g.notas AS Notas,
+                           u.nombre AS UsuarioNombre, g.entrada_id AS DocumentoId
+                    FROM pago_proveedor g
+                    LEFT JOIN usuario u ON u.id = g.usuario_id
+                    WHERE g.proveedor_id = @Id
+                    ORDER BY g.fecha DESC, g.id DESC", new { Id = proveedorId }).ToList();
+        }
+
+        /**
+         * @brief Registra un pago a un proveedor que no pertenece a una entrada.
+         * @param proveedorId Proveedor
+         * @param usuarioId Usuario que lo registra
+         * @param valor Valor pagado
+         * @param metodoPago Efectivo, transferencia...
+         * @param notas Notas
+         * @return Identificador del pago
+         */
+        public int InsertPago(int proveedorId, int usuarioId, decimal valor, string metodoPago, string notas)
+        {
+            using (IDbConnection db = _conexiones.Crear())
+            {
+                db.Open();
+                db.Execute(@"INSERT INTO pago_proveedor (fecha, proveedor_id, valor, metodo_pago, usuario_id, notas)
+                             VALUES (@Fecha, @ProveedorId, @Valor, @MetodoPago, @UsuarioId, @Notas)",
+                           new { Fecha = Sql.Ahora(), ProveedorId = proveedorId, Valor = valor, MetodoPago = metodoPago, UsuarioId = usuarioId, Notas = notas });
+                return Sql.UltimoId(db);
+            }
+        }
+
+        /**
+         * @brief Borra un pago.
+         * @param pagoId Pago
+         * @return true si se borró
+         */
+        public bool DeletePago(int pagoId)
+        {
+            using (IDbConnection db = _conexiones.Crear())
+                return db.Execute("DELETE FROM pago_proveedor WHERE id = @Id", new { Id = pagoId }) > 0;
         }
 
         /**

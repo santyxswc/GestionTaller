@@ -1,0 +1,34 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="TallerMoreno.Desktop.Views.RegistrarPagoView"
+        Title="{Binding Titulo}"
+        Width="560" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Background="White">
+  <StackPanel Margin="32,28">
+    <TextBlock Classes="titulo-ventana" Text="{Binding Titulo}" TextWrapping="Wrap"/>
+    <TextBlock Classes="subtitulo" Text="{Binding TextoDeuda}"/>
+
+    <TextBlock Classes="etiqueta" Text="Valor"/>
+    <NumericUpDown Value="{Binding Valor}" Minimum="0" Increment="10000" FormatString="N0" FontSize="24" MinHeight="56"/>
+    <TextBlock Text="{Binding Queda}" FontWeight="SemiBold" Foreground="{StaticResource TextoSuaveBrush}" Margin="2,8,0,0"/>
+
+    <TextBlock Classes="etiqueta" Text="Cómo se pagó"/>
+    <ListBox Classes="chips" ItemsSource="{Binding MetodosPago}" SelectedItem="{Binding MetodoPago}"/>
+
+    <TextBlock Classes="etiqueta" Text="Notas"/>
+    <TextBox Text="{Binding Notas}" Watermark="Opcional, por ejemplo el número del comprobante"/>
+
+    <Border Classes="error" Margin="0,16,0,0"
+            IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding ErrorMessage}" TextWrapping="Wrap"/>
+    </Border>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,24,0,0">
+      <Button Classes="secundario" Content="Cancelar" Width="130" IsCancel="True" Command="{Binding CancelarCommand}"/>
+      <Button Classes="exito" Content="Guardar pago" IsDefault="True" Command="{Binding GuardarCommand}"/>
+    </StackPanel>
+  </StackPanel>
+</Window>

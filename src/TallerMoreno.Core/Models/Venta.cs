@@ -29,10 +29,14 @@ namespace TallerMoreno.Core.Models
         public string UsuarioNombre { get; set; }
         /** Efectivo, transferencia... */
         public string MetodoPago { get; set; }
-        /** Total cobrado. */
+        /** Total de la venta. */
         public decimal Total { get; set; }
         /** Total menos el costo de los repuestos. */
         public decimal Ganancia { get; set; }
+        /** Lo que el cliente pagó al comprar; en las ventas de mostrador es todo el total. */
+        public decimal Abonado { get; set; }
+        /** Indica si se fió: el cliente quedó debiendo parte de la venta. */
+        public bool Fiada => ClienteId.HasValue && Abonado < Total;
         /** Unidades vendidas. */
         public int Unidades { get; set; }
         /** Indica si se anuló (el stock se devolvió al inventario). */

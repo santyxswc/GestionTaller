@@ -59,5 +59,30 @@ namespace TallerMoreno.Core.Abstractions
          * @return true si se eliminó
          */
         bool Delete(int id);
+
+        /**
+         * @brief Abonos de un cliente, incluidos los hechos al comprar.
+         * @param clienteId Cliente
+         * @return Abonos, del más reciente al más antiguo
+         */
+        IEnumerable<Pago> Abonos(int clienteId);
+
+        /**
+         * @brief Registra un abono de un cliente que no pertenece a una venta.
+         * @param clienteId Cliente
+         * @param usuarioId Usuario que lo recibe
+         * @param valor Valor abonado
+         * @param metodoPago Efectivo, transferencia...
+         * @param notas Notas
+         * @return Identificador del abono
+         */
+        int InsertAbono(int clienteId, int usuarioId, decimal valor, string metodoPago, string notas);
+
+        /**
+         * @brief Borra un abono.
+         * @param abonoId Abono
+         * @return true si se borró
+         */
+        bool DeleteAbono(int abonoId);
     }
 }

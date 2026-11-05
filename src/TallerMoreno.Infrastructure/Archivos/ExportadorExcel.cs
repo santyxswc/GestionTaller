@@ -131,8 +131,8 @@ namespace TallerMoreno.Infrastructure.Archivos
             var lista = clientes.ToList();
             using var libro = new XLWorkbook();
             var hoja = libro.Worksheets.Add("Clientes");
-            string[] columnas = { "Cliente", "Documento", "Teléfono", "Placa", "Vehículo", "Compras", "Total comprado", "Última compra" };
-            double[] anchos = { 30, 15, 15, 11, 24, 10, 17, 16 };
+            string[] columnas = { "Cliente", "Documento", "Teléfono", "Placa", "Vehículo", "Compras", "Total comprado", "Última compra", "Debe" };
+            double[] anchos = { 30, 15, 15, 11, 24, 10, 17, 16, 15 };
             Encabezado(hoja, "Clientes · Taller Moreno", columnas, anchos);
 
             int fila = FilaEncabezado + 1;
@@ -147,6 +147,7 @@ namespace TallerMoreno.Infrastructure.Archivos
                 hoja.Cell(fila, 7).Value = c.TotalComprado;
                 if (c.UltimaCompra.HasValue)
                     hoja.Cell(fila, 8).Value = c.UltimaCompra.Value;
+                hoja.Cell(fila, 9).Value = c.Deuda;
                 fila++;
             }
 
@@ -155,6 +156,8 @@ namespace TallerMoreno.Infrastructure.Archivos
             Total(hoja, fila, 6, ultima, formatoPesos: false);
             Total(hoja, fila, 7, ultima);
             hoja.Range(FilaEncabezado + 1, 7, fila, 7).Style.NumberFormat.Format = FormatoPesos;
+            Total(hoja, fila, 9, ultima);
+            hoja.Range(FilaEncabezado + 1, 9, fila, 9).Style.NumberFormat.Format = FormatoPesos;
             hoja.Range(FilaEncabezado + 1, 8, fila, 8).Style.DateFormat.Format = "dd/mm/yyyy";
             Cerrar(hoja, fila, columnas.Length);
             libro.SaveAs(ruta);

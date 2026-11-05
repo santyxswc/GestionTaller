@@ -17,7 +17,8 @@
              Watermark="🔍  Buscar por nombre, NIT, contacto o teléfono"/>
 
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
-      <Button Content="📦  Ver entradas" Command="{Binding EntradasCommand}"/>
+      <Button Content="📦  Entradas y pagos" Command="{Binding EntradasCommand}"/>
+      <Button Classes="exito" Content="💵  Registrar pago" Command="{Binding PagarCommand}"/>
       <Button Classes="secundario" Content="✏️  Editar" Command="{Binding EditarCommand}"/>
       <Button Classes="secundario" Content="Eliminar" Foreground="{StaticResource PeligroBrush}"
               IsVisible="{Binding EsAdmin}" Command="{Binding EliminarCommand}"/>
@@ -27,12 +28,18 @@
       <Border Classes="tarjeta" ClipToBounds="True" IsVisible="{Binding !SinResultados}">
         <DataGrid x:Name="tabla" ItemsSource="{Binding Proveedores}" SelectedItem="{Binding Seleccionado}">
           <DataGrid.Columns>
-            <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="2*"/>
-            <DataGridTextColumn Header="Contacto" Binding="{Binding Contacto}" Width="*"/>
-            <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="140"/>
-            <DataGridTextColumn Header="Entradas" Binding="{Binding NumeroEntradas}" Width="100"/>
-            <DataGridTextColumn Header="Total comprado" Binding="{Binding TotalComprado, StringFormat='{}{0:C0}'}" Width="150"/>
-            <DataGridTextColumn Header="Última entrada" Binding="{Binding UltimaEntrada, StringFormat='{}{0:dd/MM/yyyy}'}" Width="130"/>
+            <DataGridTextColumn Header="Nombre" Binding="{Binding Nombre}" Width="2*" MinWidth="170"/>
+            <DataGridTextColumn Header="Total comprado" Binding="{Binding TotalComprado, StringFormat='{}{0:C0}'}" Width="Auto"/>
+            <DataGridTextColumn Header="Pagado" Binding="{Binding TotalPagado, StringFormat='{}{0:C0}'}" Width="Auto"/>
+            <DataGridTemplateColumn Header="Le debes" Width="Auto" SortMemberPath="Deuda">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <TextBlock Classes="deuda" Classes.debe="{Binding TieneDeuda}" Text="{Binding DeudaTexto}"/>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTextColumn Header="Teléfono" Binding="{Binding Telefono}" Width="Auto"/>
+            <DataGridTextColumn Header="Última entrada" Binding="{Binding UltimaEntrada, StringFormat='{}{0:dd/MM/yyyy}'}" Width="Auto"/>
           </DataGrid.Columns>
         </DataGrid>
       </Border>

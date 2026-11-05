@@ -58,12 +58,23 @@
       </Border>
     </StackPanel>
 
-    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,16,0,0">
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,16,0,0">
       <StackPanel VerticalAlignment="Center">
         <TextBlock Text="Total de la factura" Foreground="{StaticResource TextoSuaveBrush}"/>
         <TextBlock Text="{Binding Total, StringFormat='{}{0:C0}'}" FontSize="30" FontWeight="Bold" LetterSpacing="-0.6"/>
       </StackPanel>
-      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+      <!-- Si no se pagó toda la factura, lo que falta queda como deuda con el proveedor. -->
+      <StackPanel Grid.Column="1" Margin="24,0,16,0" VerticalAlignment="Center" Spacing="6">
+        <CheckBox IsChecked="{Binding QuedeDebiendo}" Content="Le quedé debiendo parte" FontSize="15"/>
+        <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding QuedeDebiendo}">
+          <TextBlock Text="Pagué" VerticalAlignment="Center" FontWeight="SemiBold"/>
+          <NumericUpDown Grid.Column="1" Value="{Binding Pagado}" Minimum="0" Increment="10000" FormatString="N0"
+                         Watermark="0" Margin="10,0,0,0" MaxWidth="200" HorizontalAlignment="Left"/>
+        </Grid>
+        <TextBlock Text="{Binding TextoDeuda}" IsVisible="{Binding QuedeDebiendo}"
+                   Foreground="{StaticResource AvisoBrush}" FontWeight="SemiBold"/>
+      </StackPanel>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
         <Button Classes="secundario" Content="Cancelar" Width="130" IsCancel="True" Command="{Binding CancelarCommand}"/>
         <Button Classes="exito" Content="Sumar al inventario" Command="{Binding GuardarCommand}"/>
       </StackPanel>

@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Class="TallerMoreno.Desktop.Views.ListaDocumentosView"
         Title="{Binding Titulo}"
-        Width="860" Height="660" MinWidth="700" MinHeight="480"
+        Width="960" Height="680" MinWidth="760" MinHeight="480"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         Background="{StaticResource FondoBrush}">
@@ -30,20 +30,23 @@
     </StackPanel>
 
     <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,14,0,0">
-      <TextBlock Classes="ayuda" VerticalAlignment="Center" Text="Toca una fila dos veces para ver el detalle."/>
-      <Button Grid.Column="1" Classes="secundario" Content="Cerrar" Width="140" IsCancel="True" Command="{Binding CerrarCommand}"/>
+      <TextBlock Classes="ayuda" VerticalAlignment="Center" TextWrapping="Wrap" Text="Toca una fila dos veces para ver el detalle."/>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
+        <Button Classes="exito" Content="{Binding TextoAccion}" IsVisible="{Binding HayAccion}" Command="{Binding AccionCommand}"/>
+        <Button Classes="secundario" Content="Cerrar" Width="140" IsCancel="True" Command="{Binding CerrarCommand}"/>
+      </StackPanel>
     </Grid>
 
     <Panel>
       <Border Classes="tarjeta" ClipToBounds="True" IsVisible="{Binding !Vacia}">
         <DataGrid x:Name="tabla" ItemsSource="{Binding Filas}">
           <DataGrid.Columns>
-            <DataGridTextColumn Header="N°" Binding="{Binding Id}" Width="80"/>
-            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="160"/>
-            <DataGridTextColumn Header="Detalle" Binding="{Binding Descripcion}" Width="*"/>
-            <DataGridTextColumn Header="Unid." Binding="{Binding Unidades}" Width="80"/>
-            <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat='{}{0:C0}'}" Width="140"/>
-            <DataGridTextColumn Header="" Binding="{Binding Estado}" Width="100"/>
+            <DataGridTextColumn Header="N°" Binding="{Binding Numero}" Width="Auto"/>
+            <DataGridTextColumn Header="Fecha" Binding="{Binding Fecha, StringFormat='{}{0:dd/MM/yyyy HH:mm}'}" Width="Auto"/>
+            <DataGridTextColumn Header="Detalle" Binding="{Binding Descripcion}" Width="*" MinWidth="200"/>
+            <DataGridTextColumn Header="Unid." Binding="{Binding Unidades}" Width="Auto"/>
+            <DataGridTextColumn Header="Total" Binding="{Binding Total, StringFormat='{}{0:C0}'}" Width="Auto"/>
+            <DataGridTextColumn Header="" Binding="{Binding Estado}" Width="Auto"/>
           </DataGrid.Columns>
         </DataGrid>
       </Border>

@@ -46,7 +46,7 @@ namespace TallerMoreno.Desktop.ViewModels
 
         /** Cliente seleccionado en la tabla. */
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(EditarCommand), nameof(ComprasCommand), nameof(EliminarCommand))]
+        [NotifyCanExecuteChangedFor(nameof(EditarCommand), nameof(ComprasCommand), nameof(EliminarCommand), nameof(AbonoCommand))]
         private Cliente seleccionado;
 
         /** Resumen bajo el título. */
@@ -63,6 +63,8 @@ namespace TallerMoreno.Desktop.ViewModels
         public IAsyncRelayCommand EliminarCommand { get; }
         /** Descarga los clientes en Excel. */
         public IAsyncRelayCommand ExcelCommand { get; }
+        /** Registra un abono del cliente seleccionado, si debe. */
+        public IAsyncRelayCommand AbonoCommand { get; }
 
         /**
          * @brief Crea los comandos y carga los clientes.
@@ -89,6 +91,7 @@ namespace TallerMoreno.Desktop.ViewModels
             ComprasCommand = new AsyncRelayCommand(VerCompras, haySeleccion);
             EliminarCommand = new AsyncRelayCommand(Eliminar, haySeleccion);
             ExcelCommand = new AsyncRelayCommand(Excel);
+            AbonoCommand = new AsyncRelayCommand(AbonarSeleccionado, () => Seleccionado?.TieneDeuda == true);
             Cargar();
         }
 
@@ -110,7 +113,9 @@ namespace TallerMoreno.Desktop.ViewModels
                 OnPropertyChanged(nameof(SinResultados));
 
                 var todos = _clientes.Buscar().ToList();
-                Resumen = $"{todos.Count} clientes · {Formato.Moneda(todos.Sum(c => c.TotalComprado))} en compras";
+                decimal deuda = todos.Where(c => c.TieneDeuda).Sum(c => c.Deuda);
+                Resumen = $"{todos.Count} clientes · {Formato.Moneda(todos.Sum(c => c.TotalComprado))} en compras"
+                        + (deuda > 0 ? $" · te deben {Formato.Moneda(deuda)}" : " · nadie te debe");
             }
             catch (Exception ex)
             {
@@ -142,49 +147,139 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Muestra las compras del cliente; al tocar una se abre su detalle.
+         * @brief Muestra las compras y abonos del cliente; se vuelve a abrir si abona o se borra un abono.
          */
         private async Task VerCompras()
         {
-            var c = Seleccionado;
-            var compras = _clientes.Compras(c.Id).ToList();
-            var validas = compras.Where(v => !v.Anulada).ToList();
-
-            string contacto = string.Join(" · ", new[] { c.Telefono, c.Placa, c.Vehiculo }.Where(s => !string.IsNullOrWhiteSpace(s)));
-            var ventana = new ListaDocumentosView();
-            ventana.DataContext = new ListaDocumentosViewModel(ventana, AbrirVenta)
-            {
-                Titulo = c.Nombre,
-                Subtitulo = string.IsNullOrEmpty(contacto) ? "Compras del cliente" : contacto,
-                Cifras =
-                [
-                    new Dato("Total comprado", Formato.Moneda(validas.Sum(v => v.Total))),
-                    new Dato("Compras", Formato.Numero(validas.Count)),
-                    new Dato("Última compra", validas.Count == 0 ? "—" : validas.Max(v => v.Fecha).ToString("d MMM yyyy", Formato.Cultura))
-                ],
-                Filas = compras.Select(v => new FilaDocumento
-                {
-                    Id = v.Id,
-                    Fecha = v.Fecha,
-                    Descripcion = $"{v.MetodoPago} · vendió {v.UsuarioNombre}",
-                    Unidades = v.Unidades,
-                    Total = v.Total,
-                    Estado = v.Estado
-                }).ToList(),
-                TextoVacio = "Este cliente todavía no tiene compras."
-            };
-            await Dialogs.ShowForm(ventana);
+            int id = Seleccionado.Id;
+            while (await MostrarCompras(id)) { }
+            Cargar(id);
         }
 
         /**
-         * @brief Abre el detalle de una venta.
-         * @param id Venta
+         * @brief Abre la lista con las compras y abonos del cliente; al tocar una compra se abre su detalle.
+         * @param id Cliente
+         * @return true si cambió algo y hay que abrirla otra vez
          */
-        private async Task AbrirVenta(int id)
+        private async Task<bool> MostrarCompras(int id)
         {
-            var venta = _ventas.ObtenerDetalle(id);
-            if (venta != null)
-                await DocumentoView.Mostrar(venta);
+            var c = _clientes.ObtenerPorId(id);
+            if (c == null) return false;
+            var compras = _clientes.Compras(id).ToList();
+            var abonos = _clientes.Abonos(id).Where(a => a.DocumentoId == null).ToList();
+
+            string contacto = string.Join(" · ", new[] { c.Telefono, c.Placa, c.Vehiculo }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            var filas = compras.Select(v => new FilaDocumento
+            {
+                Id = v.Id,
+                Fecha = v.Fecha,
+                Descripcion = DescripcionCompra(v),
+                Unidades = v.Unidades,
+                Total = v.Total,
+                Estado = v.Anulada ? v.Estado : v.Fiada ? "Fiada" : ""
+            }).Concat(abonos.Select(a => new FilaDocumento
+            {
+                Id = a.Id,
+                EsPago = true,
+                Fecha = a.Fecha,
+                Descripcion = FilaDocumento.DescripcionPago("Abono", a),
+                Total = a.Valor,
+                Estado = "Abono"
+            })).OrderByDescending(f => f.Fecha).ToList();
+
+            var ventana = new ListaDocumentosView();
+            var vm = new ListaDocumentosViewModel(ventana, AbrirFila, c.TieneDeuda ? () => Abonar(c) : null)
+            {
+                Titulo = c.Nombre,
+                Subtitulo = string.IsNullOrEmpty(contacto) ? "Compras y abonos del cliente" : contacto,
+                Cifras =
+                [
+                    new Dato("Total comprado", Formato.Moneda(c.TotalComprado)),
+                    new Dato("Ha pagado", Formato.Moneda(c.TotalPagado)),
+                    new Dato("Te debe", c.TieneDeuda ? Formato.Moneda(c.Deuda) : c.Deuda < 0 ? c.DeudaTexto : "Nada"),
+                    new Dato("Compras", Formato.Numero(c.NumeroCompras))
+                ],
+                Filas = filas,
+                TextoVacio = "Este cliente todavía no tiene compras.",
+                TextoAccion = c.TieneDeuda ? "💵  Registrar abono" : null
+            };
+            ventana.DataContext = vm;
+            await Dialogs.ShowForm(ventana);
+            return vm.Recargar;
+        }
+
+        /**
+         * @brief Texto de una compra en la lista: cómo pagó, quién vendió y cuánto abonó si se fió.
+         * @param v Venta
+         * @return Descripción
+         */
+        private static string DescripcionCompra(Venta v)
+        {
+            if (v.Fiada && !v.Anulada)
+                return v.Abonado > 0 ? $"{v.MetodoPago} · abonó {Formato.Moneda(v.Abonado)} al comprar" : "Sin abono al comprar";
+            return $"{v.MetodoPago} · vendió {v.UsuarioNombre}";
+        }
+
+        /**
+         * @brief Abre el detalle de una compra, o borra un abono si es el administrador.
+         * @param fila Fila tocada
+         * @return true si se borró un abono
+         */
+        private async Task<bool> AbrirFila(FilaDocumento fila)
+        {
+            if (!fila.EsPago)
+            {
+                var venta = _ventas.ObtenerDetalle(fila.Id);
+                if (venta != null)
+                    await DocumentoView.Mostrar(venta);
+                return false;
+            }
+
+            if (!EsAdmin)
+                return false;
+            if (!await Dialogs.Confirm($"¿Borrar el abono de {Formato.Moneda(fila.Total)} del {fila.Fecha:dd/MM/yyyy}? Lo que debía vuelve a aparecer.",
+                                       "Borrar abono", "Borrar"))
+                return false;
+            try
+            {
+                _clientes.EliminarAbono(fila.Id);
+                _avisos.Exito("Abono borrado.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await Dialogs.Error(Errores.Mensaje(ex));
+                return false;
+            }
+        }
+
+        /**
+         * @brief Registra un abono del cliente seleccionado.
+         */
+        private async Task AbonarSeleccionado()
+        {
+            int id = Seleccionado.Id;
+            if (await Abonar(Seleccionado))
+                Cargar(id);
+        }
+
+        /**
+         * @brief Pide cuánto abonó el cliente y lo registra.
+         * @param c Cliente
+         * @return true si se registró el abono
+         */
+        private async Task<bool> Abonar(Cliente c)
+        {
+            var ventana = new RegistrarPagoView();
+            ventana.DataContext = new RegistrarPagoViewModel(ventana, $"Abono de {c.Nombre}", $"Te debe {Formato.Moneda(c.Deuda)}.", c.Deuda,
+                (valor, metodo, notas) => _clientes.RegistrarAbono(c.Id, valor, metodo, notas));
+            if (!await Dialogs.ShowForm(ventana))
+                return false;
+            var actual = _clientes.ObtenerPorId(c.Id);
+            _avisos.Exito(actual?.TieneDeuda == true
+                ? $"Abono guardado. {c.Nombre} todavía debe {Formato.Moneda(actual.Deuda)}."
+                : $"Abono guardado. {c.Nombre} quedó al día.");
+            return true;
         }
 
         /**

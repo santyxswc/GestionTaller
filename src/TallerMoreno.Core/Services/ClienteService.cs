@@ -104,6 +104,50 @@ namespace TallerMoreno.Core.Services
         }
 
         /**
+         * @brief Abonos de un cliente, incluidos los hechos al comprar.
+         * @param id Cliente
+         * @return Abonos, del más reciente al más antiguo
+         */
+        public IEnumerable<Pago> Abonos(int id) => _repo.Abonos(id);
+
+        /**
+         * @brief Registra un abono de un cliente que quedó debiendo.
+         * @param clienteId Cliente
+         * @param valor Valor abonado
+         * @param metodoPago Efectivo, transferencia...
+         * @param notas Notas (opcional)
+         * @return Identificador del abono
+         * @exception ArgumentException Si el valor no es válido o pasa de lo que debe
+         */
+        public int RegistrarAbono(int clienteId, decimal valor, string metodoPago, string notas = null)
+        {
+            _sesion.ExigirSesion();
+            var c = _repo.GetById(clienteId) ?? throw new ArgumentException("El cliente ya no existe.");
+            valor = Math.Round(valor);
+            if (valor <= 0)
+                throw new ArgumentException("Escribe cuánto abonó.");
+            if (c.Deuda <= 0)
+                throw new ArgumentException($"{c.Nombre} no debe nada.");
+            if (valor > c.Deuda)
+                throw new ArgumentException($"{c.Nombre} debe {Formato.Moneda(c.Deuda)}; el abono no puede ser mayor.");
+            return _repo.InsertAbono(clienteId, _sesion.UsuarioId, valor,
+                                     string.IsNullOrWhiteSpace(metodoPago) ? null : metodoPago.Trim(),
+                                     string.IsNullOrWhiteSpace(notas) ? null : notas.Trim());
+        }
+
+        /**
+         * @brief Borra un abono registrado por error; lo que debía vuelve a aparecer. Solo administrador.
+         * @param abonoId Abono
+         * @exception InvalidOperationException Si el abono ya no existe
+         */
+        public void EliminarAbono(int abonoId)
+        {
+            _sesion.ExigirAdmin("borrar abonos");
+            if (!_repo.DeleteAbono(abonoId))
+                throw new InvalidOperationException("Ese abono ya no existe.");
+        }
+
+        /**
          * @brief Valida y limpia los datos de un cliente.
          * @param c Cliente
          */

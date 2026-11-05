@@ -73,6 +73,20 @@
         <StackPanel DockPanel.Dock="Bottom" Margin="0,12,0,0">
           <TextBlock Classes="etiqueta" Text="Cómo paga" Margin="2,0,0,8"/>
           <ListBox Classes="chips" ItemsSource="{Binding MetodosPago}" SelectedItem="{Binding MetodoPago}"/>
+          <!-- Fiado: el cliente paga una parte (o nada) y el resto queda como deuda en Clientes. -->
+          <CheckBox IsChecked="{Binding Fiado}" Content="Queda debiendo (fiado)" FontSize="15" Margin="2,6,0,0"/>
+          <Border IsVisible="{Binding Fiado}" Background="{StaticResource AvisoFondoBrush}" CornerRadius="12" Padding="14,10" Margin="0,6,0,0">
+            <StackPanel Spacing="8">
+              <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="Abona ahora" VerticalAlignment="Center" FontWeight="SemiBold"/>
+                <NumericUpDown Grid.Column="1" Value="{Binding Abono}" Minimum="0" Increment="10000" FormatString="N0"
+                               Watermark="0" Margin="12,0,0,0"/>
+              </Grid>
+              <TextBlock Text="{Binding TextoFiado}" Foreground="{StaticResource AvisoBrush}" FontWeight="SemiBold"/>
+              <TextBlock Text="Elige el cliente arriba para que quede anotado quién debe." FontSize="13" TextWrapping="Wrap"
+                         Foreground="{StaticResource AvisoBrush}" IsVisible="{Binding !TieneCliente}"/>
+            </StackPanel>
+          </Border>
           <Grid ColumnDefinitions="*,Auto" Margin="2,10,2,14">
             <TextBlock VerticalAlignment="Bottom" Foreground="{StaticResource TextoSuaveBrush}"
                        Text="{Binding Unidades, StringFormat='Total · {0} unid.'}"/>

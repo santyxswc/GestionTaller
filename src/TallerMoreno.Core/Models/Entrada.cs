@@ -24,8 +24,12 @@ namespace TallerMoreno.Core.Models
         public int UsuarioId { get; set; }
         /** Nombre de quien la registró. */
         public string UsuarioNombre { get; set; }
-        /** Total pagado al proveedor. */
+        /** Total de la factura. */
         public decimal Total { get; set; }
+        /** Lo que se pagó al recibir la mercancía. */
+        public decimal Pagado { get; set; }
+        /** Indica si se quedó debiendo parte de la factura al recibirla. */
+        public bool QuedoDebiendo => Pagado < Total;
         /** Unidades recibidas. */
         public int Unidades { get; set; }
         /** Lineas; solo se cargan al pedir el detalle. */

@@ -51,7 +51,10 @@ namespace TallerMoreno.Desktop.ViewModels
             [
                 new Dato("Cliente", string.IsNullOrEmpty(v.ClientePlaca) ? v.Cliente : $"{v.Cliente} · {v.ClientePlaca}"),
                 new Dato("Vendió", v.UsuarioNombre),
-                new Dato("Pago", v.MetodoPago)
+                new Dato("Pago", v.MetodoPago),
+                .. (v.Fiada && !v.Anulada
+                    ? new[] { new Dato("Quedó debiendo", Formato.Moneda(v.Total - v.Abonado)) }
+                    : [])
             ],
             Items = v.Items,
             Total = v.Total,
@@ -73,7 +76,10 @@ namespace TallerMoreno.Desktop.ViewModels
             [
                 new Dato("Proveedor", e.ProveedorNombre),
                 new Dato("Factura", string.IsNullOrEmpty(e.FacturaProveedor) ? "—" : e.FacturaProveedor),
-                new Dato("Recibió", e.UsuarioNombre)
+                new Dato("Recibió", e.UsuarioNombre),
+                .. (e.QuedoDebiendo
+                    ? new[] { new Dato("Quedaste debiendo", Formato.Moneda(e.Total - e.Pagado)) }
+                    : [])
             ],
             Items = e.Items,
             Total = e.Total,

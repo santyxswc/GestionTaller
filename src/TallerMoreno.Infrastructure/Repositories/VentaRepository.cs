@@ -26,6 +26,8 @@ namespace TallerMoreno.Infrastructure.Repositories
                    c.placa AS ClientePlaca, v.usuario_id AS UsuarioId, u.nombre AS UsuarioNombre,
                    v.metodo_pago AS MetodoPago, v.total AS Total, v.anulada AS Anulada, v.notas AS Notas,
                    (SELECT COALESCE(SUM(d.cantidad), 0) FROM venta_detalle d WHERE d.venta_id = v.id) AS Unidades,
+                   CASE WHEN v.cliente_id IS NULL THEN v.total
+                        ELSE (SELECT COALESCE(SUM(a.valor), 0) FROM abono_cliente a WHERE a.venta_id = v.id) END AS Abonado,
                    v.total - (SELECT COALESCE(SUM(d.costo_unitario * d.cantidad), 0)
                               FROM venta_detalle d WHERE d.venta_id = v.id) AS Ganancia
             FROM venta v
@@ -62,13 +64,16 @@ namespace TallerMoreno.Infrastructure.Repositories
          * @param metodoPago Método de pago
          * @param notas Notas de la venta
          * @param lineas Repuestos y cantidades (sin repetidos)
+         * @param abono Lo que el cliente paga ahora si la venta se fía, o null si paga todo
          * @return Número de la venta
-         * @exception InvalidOperationException Si un repuesto no existe o no alcanza el stock; no se guarda nada
+         * @exception InvalidOperationException Si un repuesto no existe, no alcanza el stock o el abono pasa
+         *            del total; no se guarda nada
          *
          * Los precios y costos se toman de la base de datos en el momento de la venta. El descuento
          * se hace con "stock >= cantidad" en la misma sentencia, así el stock nunca queda negativo.
+         * Si la venta tiene cliente, lo que paga queda como abono de esa venta: así se sabe cuánto debe.
          */
-        public int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas)
+        public int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas, decimal? abono)
         {
             using (IDbConnection db = _conexiones.Crear())
             {
@@ -97,12 +102,22 @@ namespace TallerMoreno.Infrastructure.Repositories
                         });
                     }
 
+                    decimal total = detalle.Sum(d => d.Subtotal);
+                    if (abono > total)
+                        throw new InvalidOperationException($"El abono no puede ser mayor que el total de la venta ({Formato.Moneda(total)}).");
+
                     string fecha = Sql.Ahora();
                     db.Execute(@"INSERT INTO venta (fecha, cliente_id, usuario_id, metodo_pago, total, notas)
                                  VALUES (@Fecha, @ClienteId, @UsuarioId, @MetodoPago, @Total, @Notas)",
-                               new { Fecha = fecha, ClienteId = clienteId, UsuarioId = usuarioId, MetodoPago = metodoPago, Total = detalle.Sum(d => d.Subtotal), Notas = notas },
+                               new { Fecha = fecha, ClienteId = clienteId, UsuarioId = usuarioId, MetodoPago = metodoPago, Total = total, Notas = notas },
                                tran);
                     int id = Sql.UltimoId(db, tran);
+
+                    decimal pagado = abono ?? total;
+                    if (clienteId.HasValue && pagado > 0)
+                        db.Execute(@"INSERT INTO abono_cliente (fecha, cliente_id, venta_id, valor, metodo_pago, usuario_id)
+                                     VALUES (@Fecha, @ClienteId, @VentaId, @Valor, @MetodoPago, @UsuarioId)",
+                                   new { Fecha = fecha, ClienteId = clienteId, VentaId = id, Valor = pagado, MetodoPago = metodoPago, UsuarioId = usuarioId }, tran);
 
                     foreach (var d in detalle)
                     {

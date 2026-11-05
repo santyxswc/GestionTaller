@@ -59,5 +59,30 @@ namespace TallerMoreno.Core.Abstractions
          * @return true si se eliminó
          */
         bool Delete(int id);
+
+        /**
+         * @brief Pagos hechos a un proveedor, incluidos los hechos al recibir mercancía.
+         * @param proveedorId Proveedor
+         * @return Pagos, del más reciente al más antiguo
+         */
+        IEnumerable<Pago> Pagos(int proveedorId);
+
+        /**
+         * @brief Registra un pago a un proveedor que no pertenece a una entrada.
+         * @param proveedorId Proveedor
+         * @param usuarioId Usuario que lo registra
+         * @param valor Valor pagado
+         * @param metodoPago Efectivo, transferencia...
+         * @param notas Notas
+         * @return Identificador del pago
+         */
+        int InsertPago(int proveedorId, int usuarioId, decimal valor, string metodoPago, string notas);
+
+        /**
+         * @brief Borra un pago.
+         * @param pagoId Pago
+         * @return true si se borró
+         */
+        bool DeletePago(int pagoId);
     }
 }

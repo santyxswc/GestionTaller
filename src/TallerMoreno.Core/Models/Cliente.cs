@@ -45,6 +45,14 @@ namespace TallerMoreno.Core.Models
         public int NumeroCompras { get; set; }
         /** Fecha de la última compra (solo lectura). */
         public DateTime? UltimaCompra { get; set; }
+        /** Total abonado en compras no anuladas (solo lectura). */
+        public decimal TotalPagado { get; set; }
+        /** Lo que debe: lo comprado menos lo abonado. */
+        public decimal Deuda => TotalComprado - TotalPagado;
+        /** Indica si debe algo. */
+        public bool TieneDeuda => Deuda > 0;
+        /** Lo que debe como texto, "Al día" o el saldo a favor si abonó de más y luego se anuló una venta. */
+        public string DeudaTexto => Deuda > 0 ? Formato.Moneda(Deuda) : Deuda < 0 ? $"A favor {Formato.Moneda(-Deuda)}" : "Al día";
 
         /**
          * @brief Copia el cliente, para editarlo sin tocar el de la lista.

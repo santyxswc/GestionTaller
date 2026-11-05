@@ -19,7 +19,7 @@ namespace TallerMoreno.Infrastructure.Database
     public sealed class InicializadorBaseDatos
     {
         /** Versión actual del esquema. */
-        public const int VersionEsquema = 2;
+        public const int VersionEsquema = 3;
 
         /** Fábrica de conexiones a la base de datos. */
         private readonly IDbConnectionFactory _conexiones;
@@ -62,6 +62,8 @@ namespace TallerMoreno.Infrastructure.Database
                         db.Execute(EsquemaV1, transaction: tran);
                     if (version < 2)
                         db.Execute(EsquemaV2, transaction: tran);
+                    if (version < 3)
+                        db.Execute(EsquemaV3, transaction: tran);
                     db.Execute($"PRAGMA user_version = {VersionEsquema};", transaction: tran);
                     tran.Commit();
                 }
@@ -71,6 +73,50 @@ namespace TallerMoreno.Infrastructure.Database
         /** Mensaje cuando la base de datos la creó una versión más nueva del programa. */
         public const string MensajeVersionNueva =
             "Estos datos son de una versión más nueva de Taller Moreno. Instala la última versión del programa.";
+
+        /**
+         * Versión 3: pagos a proveedores y abonos de clientes, para saber cuánto se debe.
+         * Lo que ya estaba registrado se toma como pagado completo, así nadie amanece debiendo.
+         * Los INSERT no repiten pagos si la versión se vuelve a aplicar.
+         */
+        private const string EsquemaV3 = @"
+CREATE TABLE IF NOT EXISTS pago_proveedor (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha         TEXT    NOT NULL,
+    proveedor_id  INTEGER NOT NULL REFERENCES proveedor(id) ON DELETE CASCADE,
+    entrada_id    INTEGER REFERENCES entrada(id) ON DELETE CASCADE,
+    valor         INTEGER NOT NULL CHECK (valor > 0),
+    metodo_pago   TEXT,
+    usuario_id    INTEGER REFERENCES usuario(id),
+    notas         TEXT
+);
+
+CREATE TABLE IF NOT EXISTS abono_cliente (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha         TEXT    NOT NULL,
+    cliente_id    INTEGER NOT NULL REFERENCES cliente(id) ON DELETE CASCADE,
+    venta_id      INTEGER REFERENCES venta(id) ON DELETE CASCADE,
+    valor         INTEGER NOT NULL CHECK (valor > 0),
+    metodo_pago   TEXT,
+    usuario_id    INTEGER REFERENCES usuario(id),
+    notas         TEXT
+);
+
+CREATE INDEX IF NOT EXISTS ix_pago_proveedor ON pago_proveedor(proveedor_id);
+CREATE INDEX IF NOT EXISTS ix_pago_proveedor_entrada ON pago_proveedor(entrada_id);
+CREATE INDEX IF NOT EXISTS ix_abono_cliente ON abono_cliente(cliente_id);
+CREATE INDEX IF NOT EXISTS ix_abono_cliente_venta ON abono_cliente(venta_id);
+
+INSERT INTO pago_proveedor (fecha, proveedor_id, entrada_id, valor, usuario_id)
+SELECT e.fecha, e.proveedor_id, e.id, e.total, e.usuario_id
+FROM entrada e
+WHERE e.total > 0 AND NOT EXISTS (SELECT 1 FROM pago_proveedor g WHERE g.entrada_id = e.id);
+
+INSERT INTO abono_cliente (fecha, cliente_id, venta_id, valor, metodo_pago, usuario_id)
+SELECT v.fecha, v.cliente_id, v.id, v.total, v.metodo_pago, v.usuario_id
+FROM venta v
+WHERE v.cliente_id IS NOT NULL AND v.total > 0 AND NOT EXISTS (SELECT 1 FROM abono_cliente a WHERE a.venta_id = v.id);
+";
 
         /** Versión 2: ajustes generales, como el código de recuperación del dueño. */
         private const string EsquemaV2 = @"

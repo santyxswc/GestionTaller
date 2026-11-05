@@ -20,15 +20,20 @@ namespace TallerMoreno.Infrastructure.Repositories
         /** Fábrica de conexiones a la base de datos. */
         private readonly IDbConnectionFactory _conexiones;
 
-        /** Clientes con el total, el número y la fecha de sus compras no anuladas. */
+        /**
+         * Clientes con el total, el número y la fecha de sus compras no anuladas, y lo que han abonado.
+         * Lo abonado al comprar en una venta que después se anuló no cuenta: se le devolvió con la venta.
+         */
         private const string SelectSql = @"
             SELECT c.id AS Id, c.nombre AS Nombre, c.documento AS Documento, c.telefono AS Telefono,
                    c.placa AS Placa, c.vehiculo AS Vehiculo, c.notas AS Notas,
-                   COALESCE(SUM(v.total), 0) AS TotalComprado,
-                   COUNT(v.id) AS NumeroCompras,
-                   MAX(v.fecha) AS UltimaCompra
-            FROM cliente c
-            LEFT JOIN venta v ON v.cliente_id = c.id AND v.anulada = 0";
+                   (SELECT COALESCE(SUM(v.total), 0) FROM venta v WHERE v.cliente_id = c.id AND v.anulada = 0) AS TotalComprado,
+                   (SELECT COUNT(*) FROM venta v WHERE v.cliente_id = c.id AND v.anulada = 0) AS NumeroCompras,
+                   (SELECT MAX(v.fecha) FROM venta v WHERE v.cliente_id = c.id AND v.anulada = 0) AS UltimaCompra,
+                   (SELECT COALESCE(SUM(a.valor), 0) FROM abono_cliente a
+                    LEFT JOIN venta v ON v.id = a.venta_id
+                    WHERE a.cliente_id = c.id AND COALESCE(v.anulada, 0) = 0) AS TotalPagado
+            FROM cliente c";
 
         /**
          * @brief Crea el repositorio.
@@ -45,7 +50,7 @@ namespace TallerMoreno.Infrastructure.Repositories
         {
             using (IDbConnection db = _conexiones.Crear())
             {
-                var clientes = db.Query<Cliente>(SelectSql + " GROUP BY c.id ORDER BY c.nombre COLLATE NOCASE");
+                var clientes = db.Query<Cliente>(SelectSql + " ORDER BY c.nombre COLLATE NOCASE");
                 return clientes.Where(c => Texto.Coincide(texto, c.Nombre, c.Documento, c.Telefono, c.Placa, c.Vehiculo)).ToList();
             }
         }
@@ -58,7 +63,7 @@ namespace TallerMoreno.Infrastructure.Repositories
         public Cliente GetById(int id)
         {
             using (IDbConnection db = _conexiones.Crear())
-                return db.QueryFirstOrDefault<Cliente>(SelectSql + " WHERE c.id = @Id GROUP BY c.id", new { Id = id });
+                return db.QueryFirstOrDefault<Cliente>(SelectSql + " WHERE c.id = @Id", new { Id = id });
         }
 
         /**
@@ -124,6 +129,55 @@ namespace TallerMoreno.Infrastructure.Repositories
         {
             using (IDbConnection db = _conexiones.Crear())
                 return db.Execute("DELETE FROM cliente WHERE id = @Id", new { Id = id }) > 0;
+        }
+
+        /**
+         * @brief Abonos de un cliente, incluidos los hechos al comprar.
+         * @param clienteId Cliente
+         * @return Abonos, del más reciente al más antiguo
+         */
+        public IEnumerable<Pago> Abonos(int clienteId)
+        {
+            using (IDbConnection db = _conexiones.Crear())
+                return db.Query<Pago>(@"
+                    SELECT g.id AS Id, g.fecha AS Fecha, g.valor AS Valor, g.metodo_pago AS MetodoPago, g.notas AS Notas,
+                           u.nombre AS UsuarioNombre, g.venta_id AS DocumentoId
+                    FROM abono_cliente g
+                    LEFT JOIN usuario u ON u.id = g.usuario_id
+                    WHERE g.cliente_id = @Id
+                    ORDER BY g.fecha DESC, g.id DESC", new { Id = clienteId }).ToList();
+        }
+
+        /**
+         * @brief Registra un abono de un cliente que no pertenece a una venta.
+         * @param clienteId Cliente
+         * @param usuarioId Usuario que lo recibe
+         * @param valor Valor abonado
+         * @param metodoPago Efectivo, transferencia...
+         * @param notas Notas
+         * @return Identificador del abono
+         */
+        public int InsertAbono(int clienteId, int usuarioId, decimal valor, string metodoPago, string notas)
+        {
+            using (IDbConnection db = _conexiones.Crear())
+            {
+                db.Open();
+                db.Execute(@"INSERT INTO abono_cliente (fecha, cliente_id, valor, metodo_pago, usuario_id, notas)
+                             VALUES (@Fecha, @ClienteId, @Valor, @MetodoPago, @UsuarioId, @Notas)",
+                           new { Fecha = Sql.Ahora(), ClienteId = clienteId, Valor = valor, MetodoPago = metodoPago, UsuarioId = usuarioId, Notas = notas });
+                return Sql.UltimoId(db);
+            }
+        }
+
+        /**
+         * @brief Borra un abono.
+         * @param abonoId Abono
+         * @return true si se borró
+         */
+        public bool DeleteAbono(int abonoId)
+        {
+            using (IDbConnection db = _conexiones.Crear())
+                return db.Execute("DELETE FROM abono_cliente WHERE id = @Id", new { Id = abonoId }) > 0;
         }
 
         /**

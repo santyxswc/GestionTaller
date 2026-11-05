@@ -104,6 +104,50 @@ namespace TallerMoreno.Core.Services
         }
 
         /**
+         * @brief Pagos hechos a un proveedor, incluidos los hechos al recibir mercancía.
+         * @param id Proveedor
+         * @return Pagos, del más reciente al más antiguo
+         */
+        public IEnumerable<Pago> Pagos(int id) => _repo.Pagos(id);
+
+        /**
+         * @brief Registra un pago para ir bajando lo que se le debe a un proveedor.
+         * @param proveedorId Proveedor
+         * @param valor Valor pagado
+         * @param metodoPago Efectivo, transferencia...
+         * @param notas Notas (opcional)
+         * @return Identificador del pago
+         * @exception ArgumentException Si el valor no es válido o pasa de lo que se le debe
+         */
+        public int RegistrarPago(int proveedorId, decimal valor, string metodoPago, string notas = null)
+        {
+            _sesion.ExigirSesion();
+            var p = _repo.GetById(proveedorId) ?? throw new ArgumentException("El proveedor ya no existe.");
+            valor = Math.Round(valor);
+            if (valor <= 0)
+                throw new ArgumentException("Escribe cuánto le pagaste.");
+            if (p.Deuda <= 0)
+                throw new ArgumentException($"No le debes nada a {p.Nombre}.");
+            if (valor > p.Deuda)
+                throw new ArgumentException($"A {p.Nombre} le debes {Formato.Moneda(p.Deuda)}; el pago no puede ser mayor.");
+            return _repo.InsertPago(proveedorId, _sesion.UsuarioId, valor,
+                                    string.IsNullOrWhiteSpace(metodoPago) ? null : metodoPago.Trim(),
+                                    string.IsNullOrWhiteSpace(notas) ? null : notas.Trim());
+        }
+
+        /**
+         * @brief Borra un pago registrado por error; lo que se debía vuelve a aparecer. Solo administrador.
+         * @param pagoId Pago
+         * @exception InvalidOperationException Si el pago ya no existe
+         */
+        public void EliminarPago(int pagoId)
+        {
+            _sesion.ExigirAdmin("borrar pagos");
+            if (!_repo.DeletePago(pagoId))
+                throw new InvalidOperationException("Ese pago ya no existe.");
+        }
+
+        /**
          * @brief Valida y limpia los datos de un proveedor.
          * @param p Proveedor
          */

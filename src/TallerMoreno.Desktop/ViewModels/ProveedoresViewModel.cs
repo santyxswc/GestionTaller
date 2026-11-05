@@ -44,7 +44,7 @@ namespace TallerMoreno.Desktop.ViewModels
 
         /** Proveedor seleccionado en la tabla. */
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(EditarCommand), nameof(EntradasCommand), nameof(EliminarCommand))]
+        [NotifyCanExecuteChangedFor(nameof(EditarCommand), nameof(EntradasCommand), nameof(EliminarCommand), nameof(PagarCommand))]
         private Proveedor seleccionado;
 
         /** Resumen bajo el título. */
@@ -61,6 +61,8 @@ namespace TallerMoreno.Desktop.ViewModels
         public IAsyncRelayCommand EliminarCommand { get; }
         /** Registra mercancía que llegó, con el proveedor seleccionado ya elegido. */
         public IAsyncRelayCommand LlegoMercanciaCommand { get; }
+        /** Registra un pago al proveedor seleccionado, si se le debe. */
+        public IAsyncRelayCommand PagarCommand { get; }
 
         /**
          * @brief Crea los comandos y carga los proveedores.
@@ -85,6 +87,7 @@ namespace TallerMoreno.Desktop.ViewModels
             EntradasCommand = new AsyncRelayCommand(VerEntradas, haySeleccion);
             EliminarCommand = new AsyncRelayCommand(Eliminar, haySeleccion);
             LlegoMercanciaCommand = new AsyncRelayCommand(LlegoMercancia);
+            PagarCommand = new AsyncRelayCommand(PagarSeleccionado, () => Seleccionado?.TieneDeuda == true);
             Cargar();
         }
 
@@ -106,7 +109,9 @@ namespace TallerMoreno.Desktop.ViewModels
                 OnPropertyChanged(nameof(SinResultados));
 
                 var todos = _proveedores.Buscar().ToList();
-                Resumen = $"{todos.Count} proveedores · {Formato.Moneda(todos.Sum(p => p.TotalComprado))} en mercancía recibida";
+                decimal deuda = todos.Where(p => p.TieneDeuda).Sum(p => p.Deuda);
+                Resumen = $"{todos.Count} proveedores · {Formato.Moneda(todos.Sum(p => p.TotalComprado))} en mercancía recibida"
+                        + (deuda > 0 ? $" · les debes {Formato.Moneda(deuda)}" : " · no le debes a nadie");
             }
             catch (Exception ex)
             {
@@ -138,50 +143,140 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Muestra las entradas del proveedor; al tocar una se abre su detalle.
+         * @brief Muestra las entradas y pagos del proveedor; se vuelve a abrir si se paga o se borra un pago.
          */
         private async Task VerEntradas()
         {
-            var p = Seleccionado;
-            var entradas = _proveedores.Entradas(p.Id).ToList();
-
-            string contacto = string.Join(" · ", new[] { p.Contacto, p.Telefono, p.Correo }.Where(s => !string.IsNullOrWhiteSpace(s)));
-            var ventana = new ListaDocumentosView();
-            ventana.DataContext = new ListaDocumentosViewModel(ventana, AbrirEntrada)
-            {
-                Titulo = p.Nombre,
-                Subtitulo = string.IsNullOrEmpty(contacto) ? "Mercancía recibida" : contacto,
-                Cifras =
-                [
-                    new Dato("Total comprado", Formato.Moneda(entradas.Sum(e => e.Total))),
-                    new Dato("Entradas", Formato.Numero(entradas.Count)),
-                    new Dato("Última entrada", entradas.Count == 0 ? "—" : entradas.Max(e => e.Fecha).ToString("d MMM yyyy", Formato.Cultura))
-                ],
-                Filas = entradas.Select(e => new FilaDocumento
-                {
-                    Id = e.Id,
-                    Fecha = e.Fecha,
-                    Descripcion = string.IsNullOrEmpty(e.FacturaProveedor)
-                        ? $"Recibió {e.UsuarioNombre}"
-                        : $"Factura {e.FacturaProveedor} · recibió {e.UsuarioNombre}",
-                    Unidades = e.Unidades,
-                    Total = e.Total,
-                    Estado = ""
-                }).ToList(),
-                TextoVacio = "Todavía no ha llegado mercancía de este proveedor."
-            };
-            await Dialogs.ShowForm(ventana);
+            int id = Seleccionado.Id;
+            while (await MostrarEntradas(id)) { }
+            Cargar(id);
         }
 
         /**
-         * @brief Abre el detalle de una entrada.
-         * @param id Entrada
+         * @brief Abre la lista con las entradas y pagos del proveedor; al tocar una entrada se abre su detalle.
+         * @param id Proveedor
+         * @return true si cambió algo y hay que abrirla otra vez
          */
-        private async Task AbrirEntrada(int id)
+        private async Task<bool> MostrarEntradas(int id)
         {
-            var entrada = _entradas.ObtenerDetalle(id);
-            if (entrada != null)
-                await DocumentoView.Mostrar(entrada);
+            var p = _proveedores.ObtenerPorId(id);
+            if (p == null) return false;
+            var entradas = _proveedores.Entradas(id).ToList();
+            var pagos = _proveedores.Pagos(id).Where(g => g.DocumentoId == null).ToList();
+
+            string contacto = string.Join(" · ", new[] { p.Contacto, p.Telefono, p.Correo }.Where(s => !string.IsNullOrWhiteSpace(s)));
+            var filas = entradas.Select(e => new FilaDocumento
+            {
+                Id = e.Id,
+                Fecha = e.Fecha,
+                Descripcion = DescripcionEntrada(e),
+                Unidades = e.Unidades,
+                Total = e.Total,
+                Estado = e.QuedoDebiendo ? "A crédito" : ""
+            }).Concat(pagos.Select(g => new FilaDocumento
+            {
+                Id = g.Id,
+                EsPago = true,
+                Fecha = g.Fecha,
+                Descripcion = FilaDocumento.DescripcionPago("Pago", g),
+                Total = g.Valor,
+                Estado = "Pago"
+            })).OrderByDescending(f => f.Fecha).ToList();
+
+            var ventana = new ListaDocumentosView();
+            var vm = new ListaDocumentosViewModel(ventana, AbrirFila, p.TieneDeuda ? () => Pagar(p) : null)
+            {
+                Titulo = p.Nombre,
+                Subtitulo = string.IsNullOrEmpty(contacto) ? "Mercancía recibida y pagos" : contacto,
+                Cifras =
+                [
+                    new Dato("Total comprado", Formato.Moneda(p.TotalComprado)),
+                    new Dato("Le has pagado", Formato.Moneda(p.TotalPagado)),
+                    new Dato("Le debes", p.TieneDeuda ? Formato.Moneda(p.Deuda) : "Nada"),
+                    new Dato("Entradas", Formato.Numero(p.NumeroEntradas))
+                ],
+                Filas = filas,
+                TextoVacio = "Todavía no ha llegado mercancía de este proveedor.",
+                TextoAccion = p.TieneDeuda ? "💵  Registrar pago" : null
+            };
+            ventana.DataContext = vm;
+            await Dialogs.ShowForm(ventana);
+            return vm.Recargar;
+        }
+
+        /**
+         * @brief Texto de una entrada en la lista: factura y quién recibió, o cuánto se pagó si se quedó debiendo.
+         * @param e Entrada
+         * @return Descripción
+         */
+        private static string DescripcionEntrada(Entrada e)
+        {
+            string pago = !e.QuedoDebiendo ? $"recibió {e.UsuarioNombre}"
+                        : e.Pagado > 0 ? $"pagaste {Formato.Moneda(e.Pagado)} al recibir"
+                        : "sin pagar al recibir";
+            return string.IsNullOrEmpty(e.FacturaProveedor) ? char.ToUpper(pago[0]) + pago[1..] : $"Factura {e.FacturaProveedor} · {pago}";
+        }
+
+        /**
+         * @brief Abre el detalle de una entrada, o borra un pago si es el administrador.
+         * @param fila Fila tocada
+         * @return true si se borró un pago
+         */
+        private async Task<bool> AbrirFila(FilaDocumento fila)
+        {
+            if (!fila.EsPago)
+            {
+                var entrada = _entradas.ObtenerDetalle(fila.Id);
+                if (entrada != null)
+                    await DocumentoView.Mostrar(entrada);
+                return false;
+            }
+
+            if (!EsAdmin)
+                return false;
+            if (!await Dialogs.Confirm($"¿Borrar el pago de {Formato.Moneda(fila.Total)} del {fila.Fecha:dd/MM/yyyy}? Lo que se debía vuelve a aparecer.",
+                                       "Borrar pago", "Borrar"))
+                return false;
+            try
+            {
+                _proveedores.EliminarPago(fila.Id);
+                _avisos.Exito("Pago borrado.");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                await Dialogs.Error(Errores.Mensaje(ex));
+                return false;
+            }
+        }
+
+        /**
+         * @brief Registra un pago al proveedor seleccionado.
+         */
+        private async Task PagarSeleccionado()
+        {
+            int id = Seleccionado.Id;
+            if (await Pagar(Seleccionado))
+                Cargar(id);
+        }
+
+        /**
+         * @brief Pide cuánto se le pagó al proveedor y lo registra.
+         * @param p Proveedor
+         * @return true si se registró el pago
+         */
+        private async Task<bool> Pagar(Proveedor p)
+        {
+            var ventana = new RegistrarPagoView();
+            ventana.DataContext = new RegistrarPagoViewModel(ventana, $"Pagarle a {p.Nombre}", $"Le debes {Formato.Moneda(p.Deuda)}.", p.Deuda,
+                (valor, metodo, notas) => _proveedores.RegistrarPago(p.Id, valor, metodo, notas));
+            if (!await Dialogs.ShowForm(ventana))
+                return false;
+            var actual = _proveedores.ObtenerPorId(p.Id);
+            _avisos.Exito(actual?.TieneDeuda == true
+                ? $"Pago guardado. A {p.Nombre} todavía le debes {Formato.Moneda(actual.Deuda)}."
+                : $"Pago guardado. Quedaste al día con {p.Nombre}.");
+            return true;
         }
 
         /**

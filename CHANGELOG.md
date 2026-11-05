@@ -1,5 +1,24 @@
 # Cambios
 
+## [1.3.0] - 2026-11-04
+
+### Agregado
+
+- **Lo que se les debe a los proveedores:** al registrar mercancía se puede marcar "Le quedé debiendo parte" y
+  escribir cuánto se pagó. Proveedores muestra lo comprado, lo pagado y lo que se debe, con **Registrar pago**.
+- **Lo que deben los clientes:** en Vender, "Queda debiendo (fiado)" con lo que abona ahora. Clientes muestra
+  lo que debe cada uno, con **Registrar abono**.
+- Las ventanas "Entradas y pagos" y "Compras y abonos" muestran los pagos junto a las entradas y compras;
+  el administrador puede borrar un pago o abono anotado por error.
+- Columna "Debe" en el Excel de clientes.
+
+### Cambiado
+
+- La base de datos pasa al esquema versión 3. Lo que ya estaba registrado queda como pagado completo y antes
+  de actualizar se guarda una copia automática.
+- Las tablas de Clientes y Proveedores ponen primero las cifras de dinero; el número de compras y el contacto
+  del proveedor quedan en la ventana de detalle.
+
 ## [1.2.1] - 2026-11-03
 
 ### Corregido

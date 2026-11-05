@@ -19,6 +19,9 @@ namespace TallerMoreno.Core.Services
         /** Métodos de pago aceptados. */
         public static readonly string[] MetodosPago = { "Efectivo", "Transferencia", "Nequi / Daviplata", "Tarjeta" };
 
+        /** Método que queda en una venta fiada en la que el cliente no pagó nada. */
+        public const string MetodoFiado = "Fiado";
+
         /** Acceso a datos de ventas. */
         private readonly IVentaRepository _repo;
         /** Usuario de la sesión. */
@@ -66,15 +69,25 @@ namespace TallerMoreno.Core.Services
          * @param metodoPago Método de pago
          * @param lineas Repuestos y cantidades; los repetidos se unen en una línea
          * @param notas Notas de la venta (opcional)
+         * @param abono Si la venta se fía, lo que el cliente paga ahora (0 si no paga nada); null si paga todo
          * @return Número de la venta
          * @exception ArgumentException Si faltan datos o hay cantidades no válidas
-         * @exception InvalidOperationException Si no hay stock suficiente
+         * @exception InvalidOperationException Si no hay stock suficiente o el abono pasa del total
          */
-        public int Vender(int? clienteId, string metodoPago, IEnumerable<LineaDocumento> lineas, string notas = null)
+        public int Vender(int? clienteId, string metodoPago, IEnumerable<LineaDocumento> lineas, string notas = null, decimal? abono = null)
         {
             _sesion.ExigirSesion();
             if (string.IsNullOrWhiteSpace(metodoPago))
                 throw new ArgumentException("Selecciona cómo paga el cliente.");
+            if (abono.HasValue)
+            {
+                if (!(clienteId > 0))
+                    throw new ArgumentException("Para fiar, elige el cliente: así queda anotado quién debe.");
+                if (abono < 0)
+                    throw new ArgumentException("El abono no puede ser negativo.");
+                if (abono == 0)
+                    metodoPago = MetodoFiado;
+            }
 
             var agrupadas = (lineas ?? Enumerable.Empty<LineaDocumento>())
                 .GroupBy(l => l.RepuestoId)
@@ -87,7 +100,7 @@ namespace TallerMoreno.Core.Services
                 throw new ArgumentException("Las cantidades deben ser mayores que cero.");
 
             return _repo.Insert(clienteId > 0 ? clienteId : null, _sesion.UsuarioId, metodoPago,
-                                string.IsNullOrWhiteSpace(notas) ? null : notas.Trim(), agrupadas);
+                                string.IsNullOrWhiteSpace(notas) ? null : notas.Trim(), agrupadas, abono);
         }
 
         /**

@@ -49,6 +49,14 @@ namespace TallerMoreno.Core.Models
         public int NumeroEntradas { get; set; }
         /** Fecha de la última entrada (solo lectura). */
         public DateTime? UltimaEntrada { get; set; }
+        /** Total que se le ha pagado (solo lectura). */
+        public decimal TotalPagado { get; set; }
+        /** Lo que se le debe: lo comprado menos lo pagado. */
+        public decimal Deuda => TotalComprado - TotalPagado;
+        /** Indica si se le debe algo. */
+        public bool TieneDeuda => Deuda > 0;
+        /** Lo que se le debe como texto, o "Al día". */
+        public string DeudaTexto => Deuda > 0 ? Formato.Moneda(Deuda) : "Al día";
 
         /**
          * @brief Copia el proveedor, para editarlo sin tocar el de la lista.

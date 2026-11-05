@@ -62,9 +62,11 @@ namespace TallerMoreno.Core.Services
          * @param proveedorId Proveedor
          * @param facturaProveedor Número de la factura del proveedor (opcional)
          * @param lineas Repuestos, cantidades y costo unitario; los repetidos se unen
+         * @param pagado Lo que se le pagó al proveedor al recibir, o null si se pagó toda la factura;
+         *        lo que falte queda como deuda con el proveedor
          * @return Número de la entrada
          */
-        public int Registrar(int proveedorId, string facturaProveedor, IEnumerable<LineaDocumento> lineas)
+        public int Registrar(int proveedorId, string facturaProveedor, IEnumerable<LineaDocumento> lineas, decimal? pagado = null)
         {
             _sesion.ExigirSesion();
             if (proveedorId <= 0)
@@ -87,8 +89,15 @@ namespace TallerMoreno.Core.Services
             if (agrupadas.Any(l => l.PrecioUnitario < 0))
                 throw new ArgumentException("El costo no puede ser negativo.");
 
+            decimal total = agrupadas.Sum(l => l.PrecioUnitario * l.Cantidad);
+            if (pagado < 0)
+                throw new ArgumentException("Lo pagado no puede ser negativo.");
+            if (pagado > total)
+                throw new ArgumentException($"Lo pagado no puede ser mayor que el total de la factura ({Formato.Moneda(total)}).");
+
             return _repo.Insert(proveedorId, _sesion.UsuarioId,
-                                string.IsNullOrWhiteSpace(facturaProveedor) ? null : facturaProveedor.Trim(), agrupadas);
+                                string.IsNullOrWhiteSpace(facturaProveedor) ? null : facturaProveedor.Trim(), agrupadas,
+                                pagado ?? total);
         }
     }
 }

@@ -34,6 +34,7 @@ namespace TallerMoreno.Desktop
             servicios.AddSingleton<ProveedorService>();
             servicios.AddSingleton<VentaService>();
             servicios.AddSingleton<EntradaService>();
+            servicios.AddSingleton<DevolucionService>();
             servicios.AddSingleton<ReporteService>();
             servicios.AddSingleton<ExportacionService>();
 

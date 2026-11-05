@@ -40,6 +40,7 @@ namespace TallerMoreno.Tests
             coleccion.AddSingleton<ProveedorService>();
             coleccion.AddSingleton<VentaService>();
             coleccion.AddSingleton<EntradaService>();
+            coleccion.AddSingleton<DevolucionService>();
             coleccion.AddSingleton<ReporteService>();
             coleccion.AddSingleton<ExportacionService>();
             _servicios = coleccion.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
@@ -62,6 +63,8 @@ namespace TallerMoreno.Tests
         public VentaService Ventas => _servicios.GetRequiredService<VentaService>();
         /** Entradas de mercancía. */
         public EntradaService Entradas => _servicios.GetRequiredService<EntradaService>();
+        /** Devoluciones y garantías. */
+        public DevolucionService Devoluciones => _servicios.GetRequiredService<DevolucionService>();
         /** Reportes. */
         public ReporteService Reportes => _servicios.GetRequiredService<ReporteService>();
         /** Excel y copias. */

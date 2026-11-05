@@ -43,12 +43,16 @@ namespace TallerMoreno.Core.Models
         public bool Anulada { get; set; }
         /** Notas. */
         public string Notas { get; set; }
+        /** Kilometraje del carro cuando se hizo la venta, o null. */
+        public int? Kilometraje { get; set; }
+        /** Número de devoluciones de esta venta. */
+        public int Devoluciones { get; set; }
         /** Lineas; solo se cargan al pedir el detalle. */
         public List<LineaDocumento> Items { get; set; }
 
         /** Nombre del cliente o "Cliente de mostrador". */
         public string Cliente => string.IsNullOrWhiteSpace(ClienteNombre) ? ClienteMostrador : ClienteNombre;
-        /** "Anulada" o vacío. */
-        public string Estado => Anulada ? "Anulada" : "";
+        /** "Anulada", "Devolución" o vacío. */
+        public string Estado => Anulada ? "Anulada" : Devoluciones > 0 ? "Devolución" : "";
     }
 }

@@ -156,7 +156,7 @@ namespace TallerMoreno.Infrastructure.Repositories
         }
 
         /**
-         * @brief Cuenta las ventas y entradas en las que aparece el repuesto.
+         * @brief Cuenta las ventas, entradas y devoluciones a proveedores en las que aparece el repuesto.
          * @param id Repuesto
          * @return Número de líneas
          */
@@ -165,7 +165,8 @@ namespace TallerMoreno.Infrastructure.Repositories
             using (IDbConnection db = _conexiones.Crear())
                 return db.ExecuteScalar<int>(@"
                     SELECT (SELECT COUNT(*) FROM venta_detalle WHERE repuesto_id = @Id)
-                         + (SELECT COUNT(*) FROM entrada_detalle WHERE repuesto_id = @Id)", new { Id = id });
+                         + (SELECT COUNT(*) FROM entrada_detalle WHERE repuesto_id = @Id)
+                         + (SELECT COUNT(*) FROM devolucion_proveedor WHERE repuesto_id = @Id)", new { Id = id });
         }
 
         /**

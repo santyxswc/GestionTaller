@@ -1,5 +1,30 @@
 # Cambios
 
+## [1.4.0] - 2026-11-04
+
+### Agregado
+
+- **Devoluciones y garantías de clientes:** en el detalle de una venta, **Devolución o garantía**: qué repuesto
+  devolvió, por qué, y si se le cambió por otro, se le devolvió la plata o se le rebajó de lo que debe. Si el
+  repuesto está bueno vuelve al inventario. Clientes muestra cuántas devoluciones tiene cada uno.
+- **Devoluciones a proveedores:** botón **Devolución o garantía** en Proveedores. Si el proveedor todavía no
+  responde, queda pendiente y luego se anota si lo cambió, devolvió la plata o lo rebajó de la deuda.
+  La tabla muestra las devoluciones y las garantías sin respuesta.
+- **Kilometraje del carro:** se anota al vender (con el último kilometraje a la vista) o en el formulario del
+  cliente. Se ve en la tabla de clientes, en sus compras y en el detalle de cada venta.
+- Columnas "Kilometraje" y "Devoluciones" en el Excel de clientes.
+
+### Cambiado
+
+- La base de datos pasa al esquema versión 4. Lo registrado antes no cambia.
+- Lo devuelto en plata o rebajado se descuenta de lo comprado y, si fue en plata, también de lo pagado.
+- Una venta con devoluciones ya no se puede anular.
+- En la tabla de clientes la placa y el vehículo van juntos y la última compra queda en la ventana de compras.
+
+### Corregido
+
+- El detalle de una venta cortaba el título de la columna "Cant.".
+
 ## [1.3.0] - 2026-11-04
 
 ### Agregado

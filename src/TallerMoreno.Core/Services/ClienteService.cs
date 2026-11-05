@@ -158,6 +158,7 @@ namespace TallerMoreno.Core.Services
                 throw new ArgumentException("Escribe el nombre del cliente.");
             c.Nombre = c.Nombre.Trim();
             c.Placa = string.IsNullOrWhiteSpace(c.Placa) ? null : c.Placa.Trim().ToUpperInvariant().Replace(" ", "");
+            VentaService.ValidarKilometraje(c.Kilometraje);
         }
     }
 }

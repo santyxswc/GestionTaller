@@ -39,7 +39,21 @@ namespace TallerMoreno.Desktop.ViewModels
                     if (_form != null) _form.PropertyChanged += Form_PropertyChanged;
                     SaveCommand?.NotifyCanExecuteChanged();
                     OnPropertyChanged(nameof(Titulo));
+                    OnPropertyChanged(nameof(Kilometraje));
                 }
+            }
+        }
+
+        /**
+         * @brief Kilometraje del cliente como número decimal, que es lo que usa el campo numérico.
+         */
+        public decimal? Kilometraje
+        {
+            get => Form?.Kilometraje;
+            set
+            {
+                if (Form != null)
+                    Form.Kilometraje = value.HasValue ? (int)Math.Round(value.Value) : null;
             }
         }
 

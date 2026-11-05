@@ -273,6 +273,11 @@
       <Setter Property="Foreground" Value="{StaticResource PeligroBrush}"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
+    <!-- Garantías que el proveedor no ha respondido. -->
+    <Style Selector="TextBlock.deuda.pendiente">
+      <Setter Property="Foreground" Value="{StaticResource AvisoBrush}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
     <Style Selector="Border.tarjeta">
       <Setter Property="Background" Value="White"/>
       <Setter Property="CornerRadius" Value="16"/>

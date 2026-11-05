@@ -70,13 +70,16 @@ namespace TallerMoreno.Core.Services
          * @param lineas Repuestos y cantidades; los repetidos se unen en una línea
          * @param notas Notas de la venta (opcional)
          * @param abono Si la venta se fía, lo que el cliente paga ahora (0 si no paga nada); null si paga todo
+         * @param kilometraje Kilometraje del carro del cliente (opcional; sin cliente no se guarda)
          * @return Número de la venta
          * @exception ArgumentException Si faltan datos o hay cantidades no válidas
          * @exception InvalidOperationException Si no hay stock suficiente o el abono pasa del total
          */
-        public int Vender(int? clienteId, string metodoPago, IEnumerable<LineaDocumento> lineas, string notas = null, decimal? abono = null)
+        public int Vender(int? clienteId, string metodoPago, IEnumerable<LineaDocumento> lineas, string notas = null, decimal? abono = null,
+                          int? kilometraje = null)
         {
             _sesion.ExigirSesion();
+            ValidarKilometraje(kilometraje);
             if (string.IsNullOrWhiteSpace(metodoPago))
                 throw new ArgumentException("Selecciona cómo paga el cliente.");
             if (abono.HasValue)
@@ -99,13 +102,30 @@ namespace TallerMoreno.Core.Services
             if (agrupadas.Any(l => l.Cantidad <= 0))
                 throw new ArgumentException("Las cantidades deben ser mayores que cero.");
 
-            return _repo.Insert(clienteId > 0 ? clienteId : null, _sesion.UsuarioId, metodoPago,
-                                string.IsNullOrWhiteSpace(notas) ? null : notas.Trim(), agrupadas, abono);
+            bool conCliente = clienteId > 0;
+            return _repo.Insert(conCliente ? clienteId : null, _sesion.UsuarioId, metodoPago,
+                                string.IsNullOrWhiteSpace(notas) ? null : notas.Trim(), agrupadas, abono,
+                                conCliente ? kilometraje : null);
+        }
+
+        /** Kilometraje más alto que se acepta. */
+        public const int KilometrajeMaximo = 3_000_000;
+
+        /**
+         * @brief Revisa que un kilometraje tenga sentido.
+         * @param km Kilómetros, o null
+         * @exception ArgumentException Si es negativo o exagerado
+         */
+        public static void ValidarKilometraje(int? km)
+        {
+            if (km < 0 || km > KilometrajeMaximo)
+                throw new ArgumentException("El kilometraje no es válido.");
         }
 
         /**
          * @brief Anula una venta y devuelve las unidades al inventario. Solo administrador.
          * @param id Número de la venta
+         * @exception InvalidOperationException Si ya está anulada o tiene devoluciones
          */
         public void Anular(int id)
         {

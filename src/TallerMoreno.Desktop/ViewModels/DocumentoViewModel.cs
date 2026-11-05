@@ -34,6 +34,16 @@ namespace TallerMoreno.Desktop.ViewModels
         public decimal Total { get; init; }
         /** Indica si la venta está anulada. */
         public bool Anulada { get; init; }
+        /** Devoluciones de la venta, una por línea de texto. */
+        public List<string> Devoluciones { get; init; } = [];
+        /** Indica si la venta tiene devoluciones. */
+        public bool HayDevoluciones => Devoluciones.Count > 0;
+        /** Texto del botón de acción, como "Devolución o garantía"; vacío lo oculta. */
+        public string TextoAccion { get; init; }
+        /** Indica si se muestra el botón de acción. */
+        public bool HayAccion => !string.IsNullOrEmpty(TextoAccion);
+        /** Acción del botón; cierra el detalle si cambió algo. */
+        public IAsyncRelayCommand AccionCommand { get; private init; }
         /** Cierra la ventana. */
         public IRelayCommand CerrarCommand { get; private init; }
 
@@ -41,9 +51,11 @@ namespace TallerMoreno.Desktop.ViewModels
          * @brief Crea el detalle de una venta.
          * @param ventana Ventana que lo muestra
          * @param v Venta con sus líneas
+         * @param devoluciones Devoluciones de la venta (opcional)
+         * @param devolver Registra una devolución; devuelve true si se guardó (opcional)
          * @return ViewModel del detalle
          */
-        public static DocumentoViewModel DeVenta(Window ventana, Venta v) => new()
+        public static DocumentoViewModel DeVenta(Window ventana, Venta v, IEnumerable<Devolucion> devoluciones = null, Func<Task<bool>> devolver = null) => new()
         {
             Titulo = $"Venta N° {v.Id}",
             Subtitulo = v.Fecha.ToString("dddd d 'de' MMMM 'de' yyyy · h:mm tt", Formato.Cultura),
@@ -52,6 +64,7 @@ namespace TallerMoreno.Desktop.ViewModels
                 new Dato("Cliente", string.IsNullOrEmpty(v.ClientePlaca) ? v.Cliente : $"{v.Cliente} · {v.ClientePlaca}"),
                 new Dato("Vendió", v.UsuarioNombre),
                 new Dato("Pago", v.MetodoPago),
+                .. (v.Kilometraje.HasValue ? new[] { new Dato("Kilometraje", Formato.Kilometraje(v.Kilometraje)) } : []),
                 .. (v.Fiada && !v.Anulada
                     ? new[] { new Dato("Quedó debiendo", Formato.Moneda(v.Total - v.Abonado)) }
                     : [])
@@ -59,7 +72,15 @@ namespace TallerMoreno.Desktop.ViewModels
             Items = v.Items,
             Total = v.Total,
             Anulada = v.Anulada,
-            CerrarCommand = new RelayCommand(() => ventana.Close())
+            Devoluciones = (devoluciones ?? [])
+                .Select(d => $"{d.Fecha:dd/MM/yyyy} · {d.Cantidad} × {FilaDocumento.DescripcionDevolucion(d, deProveedor: false)}").ToList(),
+            TextoAccion = devolver != null ? "↩  Devolución o garantía" : null,
+            AccionCommand = new AsyncRelayCommand(async () =>
+            {
+                if (devolver != null && await devolver())
+                    ventana.Close(true);
+            }),
+            CerrarCommand = new RelayCommand(() => ventana.Close(false))
         };
 
         /**
@@ -83,7 +104,8 @@ namespace TallerMoreno.Desktop.ViewModels
             ],
             Items = e.Items,
             Total = e.Total,
-            CerrarCommand = new RelayCommand(() => ventana.Close())
+            AccionCommand = new AsyncRelayCommand(() => Task.CompletedTask),
+            CerrarCommand = new RelayCommand(() => ventana.Close(false))
         };
     }
 }

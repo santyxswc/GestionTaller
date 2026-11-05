@@ -30,7 +30,7 @@
     </StackPanel>
 
     <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,Auto" Margin="0,14,0,0">
-      <TextBlock Classes="ayuda" VerticalAlignment="Center" TextWrapping="Wrap" Text="Toca una fila dos veces para ver el detalle."/>
+      <TextBlock Classes="ayuda" VerticalAlignment="Center" TextWrapping="Wrap" Text="{Binding Ayuda}"/>
       <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10">
         <Button Classes="exito" Content="{Binding TextoAccion}" IsVisible="{Binding HayAccion}" Command="{Binding AccionCommand}"/>
         <Button Classes="secundario" Content="Cerrar" Width="140" IsCancel="True" Command="{Binding CerrarCommand}"/>

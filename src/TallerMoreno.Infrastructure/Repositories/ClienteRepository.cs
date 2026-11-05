@@ -23,16 +23,23 @@ namespace TallerMoreno.Infrastructure.Repositories
         /**
          * Clientes con el total, el número y la fecha de sus compras no anuladas, y lo que han abonado.
          * Lo abonado al comprar en una venta que después se anuló no cuenta: se le devolvió con la venta.
+         * Lo devuelto en plata o rebajado de la deuda se resta de lo comprado; la plata devuelta, también de lo pagado.
          */
         private const string SelectSql = @"
             SELECT c.id AS Id, c.nombre AS Nombre, c.documento AS Documento, c.telefono AS Telefono,
                    c.placa AS Placa, c.vehiculo AS Vehiculo, c.notas AS Notas,
-                   (SELECT COALESCE(SUM(v.total), 0) FROM venta v WHERE v.cliente_id = c.id AND v.anulada = 0) AS TotalComprado,
+                   c.kilometraje AS Kilometraje, c.kilometraje_fecha AS KilometrajeFecha,
+                   (SELECT COALESCE(SUM(v.total), 0) FROM venta v WHERE v.cliente_id = c.id AND v.anulada = 0)
+                 - (SELECT COALESCE(SUM(d.valor), 0) FROM devolucion_cliente d
+                    WHERE d.cliente_id = c.id AND d.resultado IN ('Dinero', 'Descuento')) AS TotalComprado,
                    (SELECT COUNT(*) FROM venta v WHERE v.cliente_id = c.id AND v.anulada = 0) AS NumeroCompras,
                    (SELECT MAX(v.fecha) FROM venta v WHERE v.cliente_id = c.id AND v.anulada = 0) AS UltimaCompra,
                    (SELECT COALESCE(SUM(a.valor), 0) FROM abono_cliente a
                     LEFT JOIN venta v ON v.id = a.venta_id
-                    WHERE a.cliente_id = c.id AND COALESCE(v.anulada, 0) = 0) AS TotalPagado
+                    WHERE a.cliente_id = c.id AND COALESCE(v.anulada, 0) = 0)
+                 - (SELECT COALESCE(SUM(d.valor), 0) FROM devolucion_cliente d
+                    WHERE d.cliente_id = c.id AND d.resultado = 'Dinero') AS TotalPagado,
+                   (SELECT COUNT(*) FROM devolucion_cliente d WHERE d.cliente_id = c.id) AS Devoluciones
             FROM cliente c";
 
         /**
@@ -89,8 +96,9 @@ namespace TallerMoreno.Infrastructure.Repositories
             using (IDbConnection db = _conexiones.Crear())
             {
                 db.Open();
-                db.Execute(@"INSERT INTO cliente (nombre, documento, telefono, placa, vehiculo, notas)
-                             VALUES (@Nombre, @Documento, @Telefono, @Placa, @Vehiculo, @Notas)", Parametros(c));
+                db.Execute(@"INSERT INTO cliente (nombre, documento, telefono, placa, vehiculo, notas, kilometraje, kilometraje_fecha)
+                             VALUES (@Nombre, @Documento, @Telefono, @Placa, @Vehiculo, @Notas, @Kilometraje,
+                                     CASE WHEN @Kilometraje IS NULL THEN NULL ELSE @Fecha END)", Parametros(c));
                 return Sql.UltimoId(db);
             }
         }
@@ -105,7 +113,11 @@ namespace TallerMoreno.Infrastructure.Repositories
             using (IDbConnection db = _conexiones.Crear())
                 return db.Execute(@"UPDATE cliente
                                     SET nombre = @Nombre, documento = @Documento, telefono = @Telefono,
-                                        placa = @Placa, vehiculo = @Vehiculo, notas = @Notas
+                                        placa = @Placa, vehiculo = @Vehiculo, notas = @Notas,
+                                        kilometraje = @Kilometraje,
+                                        kilometraje_fecha = CASE WHEN @Kilometraje IS NULL THEN NULL
+                                                                 WHEN kilometraje IS @Kilometraje THEN kilometraje_fecha
+                                                                 ELSE @Fecha END
                                     WHERE id = @Id", Parametros(c)) > 0;
         }
 
@@ -185,6 +197,7 @@ namespace TallerMoreno.Infrastructure.Repositories
          * @param c Cliente
          * @return Objeto anónimo con los valores
          */
-        private static object Parametros(Cliente c) => new { c.Id, c.Nombre, c.Documento, c.Telefono, c.Placa, c.Vehiculo, c.Notas };
+        private static object Parametros(Cliente c) =>
+            new { c.Id, c.Nombre, c.Documento, c.Telefono, c.Placa, c.Vehiculo, c.Notas, c.Kilometraje, Fecha = Sql.Ahora() };
     }
 }

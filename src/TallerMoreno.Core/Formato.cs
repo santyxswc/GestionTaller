@@ -36,6 +36,13 @@ namespace TallerMoreno.Core
         public static string Numero(decimal valor) => valor.ToString("N0", Cultura);
 
         /**
+         * @brief Formatea un kilometraje.
+         * @param km Kilómetros, o null
+         * @return Texto como "85.000 km", o vacío si no hay
+         */
+        public static string Kilometraje(int? km) => km.HasValue ? $"{Numero(km.Value)} km" : "";
+
+        /**
          * @brief Convierte una fecha al texto que se guarda en la base de datos.
          * @param fecha Fecha local
          * @return Texto como "2026-10-25 14:30:00"

@@ -19,7 +19,7 @@ namespace TallerMoreno.Infrastructure.Database
     public sealed class InicializadorBaseDatos
     {
         /** Versión actual del esquema. */
-        public const int VersionEsquema = 3;
+        public const int VersionEsquema = 4;
 
         /** Fábrica de conexiones a la base de datos. */
         private readonly IDbConnectionFactory _conexiones;
@@ -64,15 +64,81 @@ namespace TallerMoreno.Infrastructure.Database
                         db.Execute(EsquemaV2, transaction: tran);
                     if (version < 3)
                         db.Execute(EsquemaV3, transaction: tran);
+                    if (version < 4)
+                    {
+                        AgregarColumna(db, tran, "cliente", "kilometraje", "INTEGER");
+                        AgregarColumna(db, tran, "cliente", "kilometraje_fecha", "TEXT");
+                        AgregarColumna(db, tran, "venta", "kilometraje", "INTEGER");
+                        db.Execute(EsquemaV4, transaction: tran);
+                    }
                     db.Execute($"PRAGMA user_version = {VersionEsquema};", transaction: tran);
                     tran.Commit();
                 }
             }
         }
 
+        /**
+         * @brief Agrega una columna a una tabla si todavía no la tiene, así la versión se puede volver a aplicar.
+         * @param db Conexión abierta
+         * @param tran Transacción en curso
+         * @param tabla Tabla
+         * @param columna Columna nueva
+         * @param tipo Tipo de la columna
+         */
+        private static void AgregarColumna(IDbConnection db, IDbTransaction tran, string tabla, string columna, string tipo)
+        {
+            bool existe = db.Query<string>($"SELECT name FROM pragma_table_info('{tabla}')", transaction: tran)
+                            .Any(n => string.Equals(n, columna, StringComparison.OrdinalIgnoreCase));
+            if (!existe)
+                db.Execute($"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo};", transaction: tran);
+        }
+
         /** Mensaje cuando la base de datos la creó una versión más nueva del programa. */
         public const string MensajeVersionNueva =
             "Estos datos son de una versión más nueva de Taller Moreno. Instala la última versión del programa.";
+
+        /**
+         * Versión 4: kilometraje del carro de cada cliente y devoluciones o garantías de clientes y a proveedores.
+         *
+         * Una devolución de cliente sale de una venta. "Cambio" entrega otro repuesto igual, "Dinero" le devuelve
+         * la plata y "Descuento" se la rebaja de lo que debe. A un proveedor también se le puede dejar "Pendiente"
+         * mientras responde por la garantía.
+         */
+        private const string EsquemaV4 = @"
+CREATE TABLE IF NOT EXISTS devolucion_cliente (
+    id                 INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha              TEXT    NOT NULL,
+    venta_id           INTEGER NOT NULL REFERENCES venta(id),
+    cliente_id         INTEGER REFERENCES cliente(id),
+    repuesto_id        INTEGER NOT NULL REFERENCES repuesto(id),
+    cantidad           INTEGER NOT NULL CHECK (cantidad > 0),
+    motivo             TEXT    NOT NULL,
+    resultado          TEXT    NOT NULL CHECK (resultado IN ('Cambio', 'Dinero', 'Descuento')),
+    valor              INTEGER NOT NULL DEFAULT 0 CHECK (valor >= 0),
+    vuelve_inventario  INTEGER NOT NULL DEFAULT 0,
+    usuario_id         INTEGER REFERENCES usuario(id),
+    notas              TEXT
+);
+
+CREATE TABLE IF NOT EXISTS devolucion_proveedor (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    fecha            TEXT    NOT NULL,
+    proveedor_id     INTEGER NOT NULL REFERENCES proveedor(id) ON DELETE CASCADE,
+    repuesto_id      INTEGER NOT NULL REFERENCES repuesto(id),
+    cantidad         INTEGER NOT NULL CHECK (cantidad > 0),
+    motivo           TEXT    NOT NULL,
+    resultado        TEXT    NOT NULL CHECK (resultado IN ('Cambio', 'Dinero', 'Descuento', 'Pendiente')),
+    valor            INTEGER NOT NULL DEFAULT 0 CHECK (valor >= 0),
+    sale_inventario  INTEGER NOT NULL DEFAULT 0,
+    resuelta_fecha   TEXT,
+    usuario_id       INTEGER REFERENCES usuario(id),
+    notas            TEXT
+);
+
+CREATE INDEX IF NOT EXISTS ix_devolucion_cliente_venta ON devolucion_cliente(venta_id);
+CREATE INDEX IF NOT EXISTS ix_devolucion_cliente ON devolucion_cliente(cliente_id);
+CREATE INDEX IF NOT EXISTS ix_devolucion_proveedor ON devolucion_proveedor(proveedor_id);
+";
 
         /**
          * Versión 3: pagos a proveedores y abonos de clientes, para saber cuánto se debe.

@@ -103,6 +103,23 @@ namespace TallerMoreno.Desktop.ViewModels
         [ObservableProperty]
         private int unidades;
 
+        /** Kilometraje con el que llegó el carro del cliente (opcional). */
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(AvisoKilometraje), nameof(HayAvisoKilometraje))]
+        private decimal? kilometraje;
+
+        /** Último kilometraje anotado del cliente elegido. */
+        private int? _ultimoKilometraje;
+
+        /** Lo que se sabe del kilometraje del cliente, como "La última vez: 80.000 km · 12/10/2026". */
+        [ObservableProperty]
+        private string textoUltimoKilometraje;
+
+        /** Aviso si el kilometraje escrito es menor que el anterior. */
+        public string AvisoKilometraje => Kilometraje < _ultimoKilometraje ? "Es menos que la última vez; revisa el número." : "";
+        /** Indica si se muestra el aviso del kilometraje. */
+        public bool HayAvisoKilometraje => AvisoKilometraje.Length > 0;
+
         /** Indica si hay un cliente elegido. */
         public bool TieneCliente => Cliente != null;
         /** Indica si la venta tiene repuestos. */
@@ -166,6 +183,30 @@ namespace TallerMoreno.Desktop.ViewModels
 
         /** @brief Filtra al cambiar de categoría. */
         partial void OnCategoriaChanged(string value) => Filtrar();
+
+        /**
+         * @brief Al elegir el cliente, muestra el último kilometraje anotado de su carro.
+         * @param value Cliente elegido, o null
+         */
+        partial void OnClienteChanged(Seleccion value)
+        {
+            _ultimoKilometraje = null;
+            TextoUltimoKilometraje = null;
+            Kilometraje = null;
+            if (value == null) return;
+            try
+            {
+                var c = _clientes.ObtenerPorId(value.Id);
+                _ultimoKilometraje = c?.Kilometraje;
+                TextoUltimoKilometraje = c?.Kilometraje is int km
+                    ? $"La última vez: {Formato.Kilometraje(km)}{(c.KilometrajeFecha is DateTime f ? $" · {f:dd/MM/yyyy}" : "")}"
+                    : "Todavía no tiene kilometraje anotado.";
+            }
+            catch (Exception ex)
+            {
+                Avisos.Error(Errores.Mensaje(ex));
+            }
+        }
 
         /**
          * @brief Vuelve a leer el inventario con el texto y la categoría elegidos.
@@ -290,7 +331,8 @@ namespace TallerMoreno.Desktop.ViewModels
             {
                 var lineas = Carrito.Select(l => new LineaDocumento { RepuestoId = l.Repuesto.Id, Cantidad = l.Cantidad });
                 decimal? abono = Fiado ? Math.Round(Abono ?? 0) : null;
-                int numero = _ventas.Vender(Cliente?.Id, MetodoPago, lineas, abono: abono);
+                int? km = TieneCliente && Kilometraje.HasValue ? (int)Math.Round(Kilometraje.Value) : null;
+                int numero = _ventas.Vender(Cliente?.Id, MetodoPago, lineas, abono: abono, kilometraje: km);
                 Avisos.Exito(abono.HasValue
                     ? $"Venta N° {numero} fiada a {Cliente.Nombre} · queda debiendo {Formato.Moneda(Total - abono.Value)}"
                     : $"Venta N° {numero} registrada · {Formato.Moneda(Total)} en {MetodoPago.ToLower()}");

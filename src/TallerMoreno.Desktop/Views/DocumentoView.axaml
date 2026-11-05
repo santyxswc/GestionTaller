@@ -37,15 +37,32 @@
         <TextBlock Text="Total" Foreground="{StaticResource TextoSuaveBrush}"/>
         <TextBlock Text="{Binding Total, StringFormat='{}{0:C0}'}" FontSize="32" FontWeight="Bold" LetterSpacing="-0.6"/>
       </StackPanel>
-      <Button Grid.Column="1" Classes="secundario" Content="Cerrar" Width="140" VerticalAlignment="Center"
-              IsCancel="True" IsDefault="True" Command="{Binding CerrarCommand}"/>
+      <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <Button Classes="secundario" Content="{Binding TextoAccion}" IsVisible="{Binding HayAccion}" Command="{Binding AccionCommand}"/>
+        <Button Classes="secundario" Content="Cerrar" Width="140" IsCancel="True" IsDefault="True" Command="{Binding CerrarCommand}"/>
+      </StackPanel>
     </Grid>
+
+    <!-- Lo que el cliente devolvió de esta venta. -->
+    <Border DockPanel.Dock="Bottom" Background="{StaticResource AvisoFondoBrush}" CornerRadius="12" Padding="14,10" Margin="0,12,0,0"
+            IsVisible="{Binding HayDevoluciones}">
+      <StackPanel Spacing="4">
+        <TextBlock Text="Devoluciones" FontWeight="SemiBold" Foreground="{StaticResource AvisoBrush}"/>
+        <ItemsControl ItemsSource="{Binding Devoluciones}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding}" TextWrapping="Wrap" FontSize="14"/>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Border>
 
     <Border BorderBrush="{StaticResource SeparadorBrush}" BorderThickness="1" CornerRadius="14" ClipToBounds="True">
       <DataGrid ItemsSource="{Binding Items}">
         <DataGrid.Columns>
           <DataGridTextColumn Header="Repuesto" Binding="{Binding Nombre}" Width="*"/>
-          <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="80"/>
+          <DataGridTextColumn Header="Cant." Binding="{Binding Cantidad}" Width="Auto"/>
           <DataGridTextColumn Header="Precio" Binding="{Binding PrecioUnitario, StringFormat='{}{0:C0}'}" Width="130"/>
           <DataGridTextColumn Header="Subtotal" Binding="{Binding Subtotal, StringFormat='{}{0:C0}'}" Width="140"/>
         </DataGrid.Columns>

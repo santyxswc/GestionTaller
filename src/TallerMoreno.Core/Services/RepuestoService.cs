@@ -163,7 +163,7 @@ namespace TallerMoreno.Core.Services
             _sesion.ExigirAdmin("eliminar repuestos");
             int usos = _repo.ContarUsos(id);
             if (usos > 0)
-                throw new InvalidOperationException($"No se puede eliminar porque aparece en {usos} venta(s) o entrada(s). Puedes dejarlo con 0 unidades.");
+                throw new InvalidOperationException($"No se puede eliminar porque aparece en {usos} venta(s), entrada(s) o devolución(es). Puedes dejarlo con 0 unidades.");
 
             var repuesto = _repo.GetById(id);
             bool ok = _repo.Delete(id);

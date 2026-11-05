@@ -39,6 +39,23 @@ namespace TallerMoreno.Core.Models
         [ObservableProperty]
         private string notas;
 
+        /** Placa y vehículo juntos, como "ABC123 · Chevrolet Spark". */
+        public string VehiculoTexto => string.Join(" · ", new[] { Placa, Vehiculo }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        /** Último kilometraje conocido del vehículo, o null si nunca se anotó. */
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(KilometrajeTexto))]
+        private int? kilometraje;
+
+        /** Cuándo se anotó el kilometraje (solo lectura). */
+        public DateTime? KilometrajeFecha { get; set; }
+        /** Kilometraje como texto, como "85.000 km", o vacío. */
+        public string KilometrajeTexto => Formato.Kilometraje(Kilometraje);
+        /** Número de devoluciones o garantías (solo lectura). */
+        public int Devoluciones { get; set; }
+        /** Devoluciones como texto, o vacío si no tiene. */
+        public string DevolucionesTexto => Devoluciones == 0 ? "" : Devoluciones.ToString();
+
         /** Total comprado en ventas no anuladas (solo lectura). */
         public decimal TotalComprado { get; set; }
         /** Número de compras no anuladas (solo lectura). */
@@ -66,7 +83,9 @@ namespace TallerMoreno.Core.Models
             Telefono = Telefono,
             Placa = Placa,
             Vehiculo = Vehiculo,
-            Notas = Notas
+            Notas = Notas,
+            Kilometraje = Kilometraje,
+            KilometrajeFecha = KilometrajeFecha
         };
     }
 }

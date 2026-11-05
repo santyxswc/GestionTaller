@@ -20,11 +20,13 @@ namespace TallerMoreno.Core.Abstractions
          * @param notas Notas de la venta
          * @param lineas Repuestos y cantidades (sin repetidos)
          * @param abono Lo que el cliente paga ahora si la venta se fía, o null si paga todo
+         * @param kilometraje Kilometraje del carro del cliente, o null
          * @return Número de la venta
          * @exception InvalidOperationException Si un repuesto no existe, no alcanza el stock o el abono pasa
          *            del total; no se guarda nada
          */
-        int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas, decimal? abono);
+        int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas, decimal? abono,
+                   int? kilometraje = null);
 
         /**
          * @brief Busca una venta sin sus líneas.
@@ -54,7 +56,7 @@ namespace TallerMoreno.Core.Abstractions
          * @brief Anula una venta y devuelve sus unidades al inventario en una transacción.
          * @param id Número de la venta
          * @param usuarioId Usuario que anula
-         * @exception InvalidOperationException Si la venta no existe o ya estaba anulada
+         * @exception InvalidOperationException Si la venta no existe, ya estaba anulada o tiene devoluciones
          */
         void Anular(int id, int usuarioId);
     }

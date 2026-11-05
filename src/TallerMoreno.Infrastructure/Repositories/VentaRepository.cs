@@ -25,6 +25,8 @@ namespace TallerMoreno.Infrastructure.Repositories
             SELECT v.id AS Id, v.fecha AS Fecha, v.cliente_id AS ClienteId, c.nombre AS ClienteNombre,
                    c.placa AS ClientePlaca, v.usuario_id AS UsuarioId, u.nombre AS UsuarioNombre,
                    v.metodo_pago AS MetodoPago, v.total AS Total, v.anulada AS Anulada, v.notas AS Notas,
+                   v.kilometraje AS Kilometraje,
+                   (SELECT COUNT(*) FROM devolucion_cliente dc WHERE dc.venta_id = v.id) AS Devoluciones,
                    (SELECT COALESCE(SUM(d.cantidad), 0) FROM venta_detalle d WHERE d.venta_id = v.id) AS Unidades,
                    CASE WHEN v.cliente_id IS NULL THEN v.total
                         ELSE (SELECT COALESCE(SUM(a.valor), 0) FROM abono_cliente a WHERE a.venta_id = v.id) END AS Abonado,
@@ -65,15 +67,18 @@ namespace TallerMoreno.Infrastructure.Repositories
          * @param notas Notas de la venta
          * @param lineas Repuestos y cantidades (sin repetidos)
          * @param abono Lo que el cliente paga ahora si la venta se fía, o null si paga todo
+         * @param kilometraje Kilometraje del carro del cliente, o null
          * @return Número de la venta
          * @exception InvalidOperationException Si un repuesto no existe, no alcanza el stock o el abono pasa
          *            del total; no se guarda nada
          *
+         * Si llega el kilometraje, queda como el último conocido del cliente.
          * Los precios y costos se toman de la base de datos en el momento de la venta. El descuento
          * se hace con "stock >= cantidad" en la misma sentencia, así el stock nunca queda negativo.
          * Si la venta tiene cliente, lo que paga queda como abono de esa venta: así se sabe cuánto debe.
          */
-        public int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas, decimal? abono)
+        public int Insert(int? clienteId, int usuarioId, string metodoPago, string notas, IEnumerable<LineaDocumento> lineas, decimal? abono,
+                          int? kilometraje = null)
         {
             using (IDbConnection db = _conexiones.Crear())
             {
@@ -107,11 +112,15 @@ namespace TallerMoreno.Infrastructure.Repositories
                         throw new InvalidOperationException($"El abono no puede ser mayor que el total de la venta ({Formato.Moneda(total)}).");
 
                     string fecha = Sql.Ahora();
-                    db.Execute(@"INSERT INTO venta (fecha, cliente_id, usuario_id, metodo_pago, total, notas)
-                                 VALUES (@Fecha, @ClienteId, @UsuarioId, @MetodoPago, @Total, @Notas)",
-                               new { Fecha = fecha, ClienteId = clienteId, UsuarioId = usuarioId, MetodoPago = metodoPago, Total = total, Notas = notas },
+                    db.Execute(@"INSERT INTO venta (fecha, cliente_id, usuario_id, metodo_pago, total, notas, kilometraje)
+                                 VALUES (@Fecha, @ClienteId, @UsuarioId, @MetodoPago, @Total, @Notas, @Kilometraje)",
+                               new { Fecha = fecha, ClienteId = clienteId, UsuarioId = usuarioId, MetodoPago = metodoPago, Total = total, Notas = notas, Kilometraje = kilometraje },
                                tran);
                     int id = Sql.UltimoId(db, tran);
+
+                    if (clienteId.HasValue && kilometraje.HasValue)
+                        db.Execute("UPDATE cliente SET kilometraje = @Km, kilometraje_fecha = @Fecha WHERE id = @Id",
+                                   new { Km = kilometraje, Fecha = fecha, Id = clienteId }, tran);
 
                     decimal pagado = abono ?? total;
                     if (clienteId.HasValue && pagado > 0)
@@ -160,7 +169,9 @@ namespace TallerMoreno.Infrastructure.Repositories
             using (IDbConnection db = _conexiones.Crear())
                 return db.Query<LineaDocumento>(@"
                     SELECT d.repuesto_id AS RepuestoId, r.codigo AS Codigo, r.nombre AS Nombre, d.cantidad AS Cantidad,
-                           d.precio_unitario AS PrecioUnitario, d.costo_unitario AS CostoUnitario, d.subtotal AS Subtotal
+                           d.precio_unitario AS PrecioUnitario, d.costo_unitario AS CostoUnitario, d.subtotal AS Subtotal,
+                           (SELECT COALESCE(SUM(dc.cantidad), 0) FROM devolucion_cliente dc
+                            WHERE dc.venta_id = d.venta_id AND dc.repuesto_id = d.repuesto_id) AS Devueltas
                     FROM venta_detalle d
                     JOIN repuesto r ON r.id = d.repuesto_id
                     WHERE d.venta_id = @Id
@@ -204,6 +215,8 @@ namespace TallerMoreno.Infrastructure.Repositories
                         throw new InvalidOperationException($"La venta N° {id} no existe.");
                     if (anulada.Value)
                         throw new InvalidOperationException($"La venta N° {id} ya estaba anulada.");
+                    if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM devolucion_cliente WHERE venta_id = @Id", new { Id = id }, tran) > 0)
+                        throw new InvalidOperationException($"La venta N° {id} tiene devoluciones registradas; no se puede anular.");
 
                     string fecha = Sql.Ahora();
                     db.Execute("UPDATE venta SET anulada = 1, anulada_fecha = @Fecha, anulada_por = @UsuarioId WHERE id = @Id",

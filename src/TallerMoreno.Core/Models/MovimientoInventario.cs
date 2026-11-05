@@ -23,6 +23,12 @@ namespace TallerMoreno.Core.Models
         public const string TipoAjuste = "Ajuste";
         /** Unidades devueltas al anular una venta. */
         public const string TipoAnulacion = "Anulación";
+        /** Unidades que un cliente devolvió y volvieron al inventario. */
+        public const string TipoDevolucion = "Devolución";
+        /** Unidades cambiadas por garantía: salen hacia el cliente o llegan del proveedor. */
+        public const string TipoGarantia = "Garantía";
+        /** Unidades que se le devolvieron a un proveedor. */
+        public const string TipoDevolucionProveedor = "Devolución a proveedor";
 
         /** Identificador. */
         public int Id { get; set; }

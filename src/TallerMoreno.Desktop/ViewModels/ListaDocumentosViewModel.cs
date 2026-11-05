@@ -1,6 +1,6 @@
 /**
  * @file ListaDocumentosViewModel.cs
- * @brief Compras y abonos de un cliente, o entradas y pagos de un proveedor.
+ * @brief Compras, abonos y devoluciones de un cliente, o entradas, pagos y devoluciones de un proveedor.
  * @author Santiago Caicedo
  */
 using Avalonia.Controls;
@@ -10,26 +10,71 @@ using TallerMoreno.Core.Models;
 namespace TallerMoreno.Desktop.ViewModels
 {
     /**
-     * @brief Fila de la lista: una venta, una entrada o un pago.
+     * @brief Qué es una fila de la lista.
+     */
+    public enum TipoFila
+    {
+        /** Venta o entrada. */
+        Documento,
+        /** Pago a un proveedor o abono de un cliente. */
+        Pago,
+        /** Devolución o garantía. */
+        Devolucion
+    }
+
+    /**
+     * @brief Fila de la lista: una venta, una entrada, un pago o una devolución.
      */
     public class FilaDocumento
     {
-        /** Número de la venta o entrada, o identificador del pago. */
+        /** Número de la venta o entrada, o identificador del pago o la devolución. */
         public int Id { get; init; }
-        /** Indica si la fila es un pago o abono y no una venta o entrada. */
-        public bool EsPago { get; init; }
-        /** Número que se muestra; los pagos no tienen. */
-        public string Numero => EsPago ? "" : Id.ToString();
+        /** Qué es la fila. */
+        public TipoFila Tipo { get; init; }
+        /** Indica si la fila es un pago o abono. */
+        public bool EsPago => Tipo == TipoFila.Pago;
+        /** Número que se muestra; solo las ventas y entradas tienen. */
+        public string Numero => Tipo == TipoFila.Documento ? Id.ToString() : "";
         /** Fecha y hora. */
         public DateTime Fecha { get; init; }
         /** Pago, factura o quién atendió. */
         public string Descripcion { get; init; }
         /** Unidades; vacío en los pagos. */
         public int? Unidades { get; init; }
-        /** Total. */
-        public decimal Total { get; init; }
-        /** "Anulada", "Fiada", "A crédito", "Pago" o "Abono" */
+        /** Total; vacío en una devolución sin plata. */
+        public decimal? Total { get; init; }
+        /** "Anulada", "Fiada", "A crédito", "Pago", "Abono", "Devolución" o "Pendiente" */
         public string Estado { get; init; }
+
+        /**
+         * @brief Texto de una devolución en la lista.
+         * @param d Devolución
+         * @param deProveedor true si es una devolución a un proveedor
+         * @param conValor true para decir cuánta plata (donde no hay una columna con el valor)
+         * @return Descripción, como "Batería 12V · Garantía · se le cambió por otro · no carga"
+         */
+        public static string DescripcionDevolucion(Devolucion d, bool deProveedor, bool conValor = true)
+        {
+            var partes = new[] { d.RepuestoNombre, d.Motivo, d.TextoResultado(deProveedor, conValor), d.Notas };
+            return string.Join(" · ", partes.Where(p => !string.IsNullOrWhiteSpace(p)));
+        }
+
+        /**
+         * @brief Fila de una devolución.
+         * @param d Devolución
+         * @param deProveedor true si es una devolución a un proveedor
+         * @return Fila
+         */
+        public static FilaDocumento DeDevolucion(Devolucion d, bool deProveedor) => new()
+        {
+            Id = d.Id,
+            Tipo = TipoFila.Devolucion,
+            Fecha = d.Fecha,
+            Descripcion = DescripcionDevolucion(d, deProveedor, conValor: false),
+            Unidades = d.Cantidad,
+            Total = d.Valor > 0 ? d.Valor : null,
+            Estado = d.EsPendiente ? "Pendiente" : "Devolución"
+        };
 
         /**
          * @brief Texto de un pago o abono en la lista.
@@ -64,6 +109,8 @@ namespace TallerMoreno.Desktop.ViewModels
         public bool Vacia => Filas.Count == 0;
         /** Texto cuando no hay documentos. */
         public string TextoVacio { get; init; }
+        /** Explicación bajo la lista. */
+        public string Ayuda { get; init; } = "Toca una fila dos veces para ver el detalle.";
         /** Texto del botón de acción, como "Registrar pago"; vacío lo oculta. */
         public string TextoAccion { get; init; }
         /** Indica si se muestra el botón de acción. */

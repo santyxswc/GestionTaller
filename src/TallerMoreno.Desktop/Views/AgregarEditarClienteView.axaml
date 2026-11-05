@@ -25,7 +25,7 @@
       </StackPanel>
     </Grid>
 
-    <Grid ColumnDefinitions="*,16,2*">
+    <Grid ColumnDefinitions="110,16,*,16,140">
       <StackPanel>
         <TextBlock Classes="etiqueta" Text="Placa"/>
         <TextBox Text="{Binding Form.Placa}" Watermark="ABC123"/>
@@ -33,6 +33,11 @@
       <StackPanel Grid.Column="2">
         <TextBlock Classes="etiqueta" Text="Vehículo"/>
         <TextBox Text="{Binding Form.Vehiculo}" Watermark="Ej: Chevrolet Spark 2015"/>
+      </StackPanel>
+      <StackPanel Grid.Column="4">
+        <TextBlock Classes="etiqueta" Text="Kilometraje"/>
+        <NumericUpDown Value="{Binding Kilometraje}" Minimum="0" Maximum="3000000" FormatString="N0"
+                       ShowButtonSpinner="False" Watermark="Ej: 85.000"/>
       </StackPanel>
     </Grid>
 

@@ -49,6 +49,14 @@ namespace TallerMoreno.Core.Models
         public int NumeroEntradas { get; set; }
         /** Fecha de la última entrada (solo lectura). */
         public DateTime? UltimaEntrada { get; set; }
+        /** Número de devoluciones o garantías (solo lectura). */
+        public int Devoluciones { get; set; }
+        /** Garantías que el proveedor todavía no ha respondido (solo lectura). */
+        public int Pendientes { get; set; }
+        /** Devoluciones como texto, como "3 · 1 pendiente", o vacío. */
+        public string DevolucionesTexto => Devoluciones == 0 ? "" : Pendientes > 0 ? $"{Devoluciones} · {Pendientes} pendiente{(Pendientes > 1 ? "s" : "")}" : Devoluciones.ToString();
+        /** Indica si hay garantías sin respuesta. */
+        public bool TienePendientes => Pendientes > 0;
         /** Total que se le ha pagado (solo lectura). */
         public decimal TotalPagado { get; set; }
         /** Lo que se le debe: lo comprado menos lo pagado. */

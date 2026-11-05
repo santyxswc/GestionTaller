@@ -64,6 +64,7 @@ namespace TallerMoreno.Infrastructure
             servicios.AddSingleton<IEntradaRepository, EntradaRepository>();
             servicios.AddSingleton<IMovimientoRepository, MovimientoRepository>();
             servicios.AddSingleton<IReporteRepository, ReporteRepository>();
+            servicios.AddSingleton<IDevolucionRepository, DevolucionRepository>();
             return servicios;
         }
     }

@@ -24,5 +24,9 @@ namespace TallerMoreno.Core.Models
         public decimal CostoUnitario { get; set; }
         /** Cantidad por precio unitario. */
         public decimal Subtotal { get; set; }
+        /** Unidades que el cliente ya devolvió (solo en ventas). */
+        public int Devueltas { get; set; }
+        /** Unidades que todavía se pueden devolver. */
+        public int PorDevolver => Cantidad - Devueltas;
     }
 }

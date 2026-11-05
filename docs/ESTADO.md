@@ -6,7 +6,7 @@
 
 - **Core, Infrastructure y Desktop completos**: compilan sin errores ni advertencias y el formato está limpio
   (`dotnet format TallerMoreno.slnx --verify-no-changes`).
-- **66 pruebas pasan** (`dotnet run --project tests/TallerMoreno.Tests`).
+- **78 pruebas pasan** (`dotnet run --project tests/TallerMoreno.Tests`).
 - Todas las pantallas escritas:
   - **Secciones:** Login (con primer uso), Vender, Inventario, Clientes, Proveedores, Historial de ventas y Usuarios.
   - **Ventanas:** detalle de repuesto, formulario de repuesto con foto, ajustar unidades, llegó mercancía,
@@ -28,6 +28,9 @@
 - Deudas con proveedores y de clientes (v1.3.0, esquema versión 3): pago parcial al recibir mercancía, venta fiada,
   pagos y abonos posteriores, y migración que deja lo anterior como pagado. 12 pruebas nuevas y revisado con
   capturas fuera de pantalla de Proveedores, Clientes, las listas, el pago, Vender y Llegó mercancía.
+- Devoluciones, garantías y kilometraje (v1.4.0, esquema versión 4): devoluciones de clientes desde el detalle
+  de la venta (cambio, plata o rebaja de la deuda), devoluciones a proveedores con garantía pendiente y su
+  respuesta, y kilometraje en Vender y en el cliente. 12 pruebas nuevas y revisado con capturas fuera de pantalla.
 
 ## Pendiente
 
@@ -41,6 +44,8 @@
    - Anular venta y ver que las unidades vuelven.
    - Entrar como Mecánico y comprobar que no ve costos, ganancias ni las acciones de administrador.
    - Deudas: llegó mercancía pagando una parte, registrar pago, vender fiado, registrar abono y borrar un abono.
+   - Devoluciones: desde Historial o Clientes abrir una venta y registrar una devolución; devolver a un
+     proveedor dejándola pendiente y luego anotar qué respondió; vender con kilometraje.
 2. **Correr las pruebas en Docker** con Docker Desktop abierto:
    `powershell -ExecutionPolicy Bypass -File scripts/pruebas-docker.ps1`.
 3. Opcional: publicar el ejecutable para el computador del taller

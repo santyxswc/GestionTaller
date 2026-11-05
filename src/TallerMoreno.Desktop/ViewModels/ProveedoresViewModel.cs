@@ -24,6 +24,10 @@ namespace TallerMoreno.Desktop.ViewModels
         private readonly ProveedorService _proveedores;
         /** Entradas, para abrir el detalle de una. */
         private readonly EntradaService _entradas;
+        /** Devoluciones y garantías. */
+        private readonly DevolucionService _devoluciones;
+        /** Inventario, para elegir el repuesto que se devuelve. */
+        private readonly RepuestoService _repuestos;
         /** Usuario de la sesión. */
         private readonly ISesionUsuario _sesion;
         /** Creación de ventanas. */
@@ -44,7 +48,7 @@ namespace TallerMoreno.Desktop.ViewModels
 
         /** Proveedor seleccionado en la tabla. */
         [ObservableProperty]
-        [NotifyCanExecuteChangedFor(nameof(EditarCommand), nameof(EntradasCommand), nameof(EliminarCommand), nameof(PagarCommand))]
+        [NotifyCanExecuteChangedFor(nameof(EditarCommand), nameof(EntradasCommand), nameof(EliminarCommand), nameof(PagarCommand), nameof(DevolverCommand))]
         private Proveedor seleccionado;
 
         /** Resumen bajo el título. */
@@ -63,20 +67,26 @@ namespace TallerMoreno.Desktop.ViewModels
         public IAsyncRelayCommand LlegoMercanciaCommand { get; }
         /** Registra un pago al proveedor seleccionado, si se le debe. */
         public IAsyncRelayCommand PagarCommand { get; }
+        /** Registra un repuesto devuelto al proveedor seleccionado. */
+        public IAsyncRelayCommand DevolverCommand { get; }
 
         /**
          * @brief Crea los comandos y carga los proveedores.
          * @param proveedores Proveedores
          * @param entradas Entradas de mercancía
+         * @param devoluciones Devoluciones y garantías
+         * @param repuestos Inventario
          * @param sesion Usuario de la sesión
          * @param vistas Creación de ventanas
          * @param avisos Avisos breves
          */
-        public ProveedoresViewModel(ProveedorService proveedores, EntradaService entradas, ISesionUsuario sesion,
-                                    FabricaVistas vistas, Avisos avisos)
+        public ProveedoresViewModel(ProveedorService proveedores, EntradaService entradas, DevolucionService devoluciones,
+                                    RepuestoService repuestos, ISesionUsuario sesion, FabricaVistas vistas, Avisos avisos)
         {
             _proveedores = proveedores;
             _entradas = entradas;
+            _devoluciones = devoluciones;
+            _repuestos = repuestos;
             _sesion = sesion;
             _vistas = vistas;
             _avisos = avisos;
@@ -88,6 +98,7 @@ namespace TallerMoreno.Desktop.ViewModels
             EliminarCommand = new AsyncRelayCommand(Eliminar, haySeleccion);
             LlegoMercanciaCommand = new AsyncRelayCommand(LlegoMercancia);
             PagarCommand = new AsyncRelayCommand(PagarSeleccionado, () => Seleccionado?.TieneDeuda == true);
+            DevolverCommand = new AsyncRelayCommand(Devolver, haySeleccion);
             Cargar();
         }
 
@@ -110,8 +121,10 @@ namespace TallerMoreno.Desktop.ViewModels
 
                 var todos = _proveedores.Buscar().ToList();
                 decimal deuda = todos.Where(p => p.TieneDeuda).Sum(p => p.Deuda);
+                int pendientes = todos.Sum(p => p.Pendientes);
                 Resumen = $"{todos.Count} proveedores · {Formato.Moneda(todos.Sum(p => p.TotalComprado))} en mercancía recibida"
-                        + (deuda > 0 ? $" · les debes {Formato.Moneda(deuda)}" : " · no le debes a nadie");
+                        + (deuda > 0 ? $" · les debes {Formato.Moneda(deuda)}" : " · no le debes a nadie")
+                        + (pendientes > 0 ? $" · {pendientes} garantía{(pendientes > 1 ? "s" : "")} sin respuesta" : "");
             }
             catch (Exception ex)
             {
@@ -143,7 +156,7 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Muestra las entradas y pagos del proveedor; se vuelve a abrir si se paga o se borra un pago.
+         * @brief Muestra las entradas, pagos y devoluciones del proveedor; se vuelve a abrir si algo cambia.
          */
         private async Task VerEntradas()
         {
@@ -153,7 +166,7 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Abre la lista con las entradas y pagos del proveedor; al tocar una entrada se abre su detalle.
+         * @brief Abre la lista con las entradas, pagos y devoluciones del proveedor; al tocar una entrada se abre su detalle.
          * @param id Proveedor
          * @return true si cambió algo y hay que abrirla otra vez
          */
@@ -163,6 +176,7 @@ namespace TallerMoreno.Desktop.ViewModels
             if (p == null) return false;
             var entradas = _proveedores.Entradas(id).ToList();
             var pagos = _proveedores.Pagos(id).Where(g => g.DocumentoId == null).ToList();
+            var devoluciones = _devoluciones.DeProveedor(id).ToList();
 
             string contacto = string.Join(" · ", new[] { p.Contacto, p.Telefono, p.Correo }.Where(s => !string.IsNullOrWhiteSpace(s)));
             var filas = entradas.Select(e => new FilaDocumento
@@ -176,18 +190,19 @@ namespace TallerMoreno.Desktop.ViewModels
             }).Concat(pagos.Select(g => new FilaDocumento
             {
                 Id = g.Id,
-                EsPago = true,
+                Tipo = TipoFila.Pago,
                 Fecha = g.Fecha,
                 Descripcion = FilaDocumento.DescripcionPago("Pago", g),
                 Total = g.Valor,
                 Estado = "Pago"
-            })).OrderByDescending(f => f.Fecha).ToList();
+            })).Concat(devoluciones.Select(d => FilaDocumento.DeDevolucion(d, deProveedor: true)))
+            .OrderByDescending(f => f.Fecha).ToList();
 
             var ventana = new ListaDocumentosView();
             var vm = new ListaDocumentosViewModel(ventana, AbrirFila, p.TieneDeuda ? () => Pagar(p) : null)
             {
                 Titulo = p.Nombre,
-                Subtitulo = string.IsNullOrEmpty(contacto) ? "Mercancía recibida y pagos" : contacto,
+                Subtitulo = string.IsNullOrEmpty(contacto) ? "Mercancía recibida, pagos y devoluciones" : contacto,
                 Cifras =
                 [
                     new Dato("Total comprado", Formato.Moneda(p.TotalComprado)),
@@ -197,6 +212,9 @@ namespace TallerMoreno.Desktop.ViewModels
                 ],
                 Filas = filas,
                 TextoVacio = "Todavía no ha llegado mercancía de este proveedor.",
+                Ayuda = p.TienePendientes
+                    ? "Toca dos veces una garantía pendiente para anotar qué respondió el proveedor."
+                    : "Toca una entrada dos veces para ver el detalle.",
                 TextoAccion = p.TieneDeuda ? "💵  Registrar pago" : null
             };
             ventana.DataContext = vm;
@@ -218,13 +236,14 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Abre el detalle de una entrada, o borra un pago si es el administrador.
+         * @brief Abre el detalle de una entrada, anota la respuesta a una garantía pendiente, o borra un pago
+         * o una devolución si es el administrador.
          * @param fila Fila tocada
-         * @return true si se borró un pago
+         * @return true si cambió algo
          */
         private async Task<bool> AbrirFila(FilaDocumento fila)
         {
-            if (!fila.EsPago)
+            if (fila.Tipo == TipoFila.Documento)
             {
                 var entrada = _entradas.ObtenerDetalle(fila.Id);
                 if (entrada != null)
@@ -232,15 +251,30 @@ namespace TallerMoreno.Desktop.ViewModels
                 return false;
             }
 
+            if (fila.Tipo == TipoFila.Devolucion)
+            {
+                var d = _devoluciones.ObtenerDeProveedor(fila.Id);
+                if (d == null)
+                    return false;
+                if (d.EsPendiente)
+                    return await ResponderGarantia(d);
+            }
+
             if (!EsAdmin)
                 return false;
-            if (!await Dialogs.Confirm($"¿Borrar el pago de {Formato.Moneda(fila.Total)} del {fila.Fecha:dd/MM/yyyy}? Lo que se debía vuelve a aparecer.",
-                                       "Borrar pago", "Borrar"))
+            bool esPago = fila.EsPago;
+            string pregunta = esPago
+                ? $"¿Borrar el pago de {Formato.Moneda(fila.Total ?? 0)} del {fila.Fecha:dd/MM/yyyy}? Lo que se debía vuelve a aparecer."
+                : $"¿Borrar la devolución del {fila.Fecha:dd/MM/yyyy}? Se deshace lo que movió en el inventario y en lo que se debe.";
+            if (!await Dialogs.Confirm(pregunta, esPago ? "Borrar pago" : "Borrar devolución", "Borrar"))
                 return false;
             try
             {
-                _proveedores.EliminarPago(fila.Id);
-                _avisos.Exito("Pago borrado.");
+                if (esPago)
+                    _proveedores.EliminarPago(fila.Id);
+                else
+                    _devoluciones.EliminarAProveedor(fila.Id);
+                _avisos.Exito(esPago ? "Pago borrado." : "Devolución borrada.");
                 return true;
             }
             catch (Exception ex)
@@ -248,6 +282,39 @@ namespace TallerMoreno.Desktop.ViewModels
                 await Dialogs.Error(Errores.Mensaje(ex));
                 return false;
             }
+        }
+
+        /**
+         * @brief Pide lo que respondió el proveedor a una garantía pendiente.
+         * @param d Devolución pendiente
+         * @return true si se guardó la respuesta o se borró
+         */
+        private async Task<bool> ResponderGarantia(Devolucion d)
+        {
+            string proveedor = _proveedores.ObtenerPorId(d.ProveedorId ?? 0)?.Nombre ?? "el proveedor";
+            var ventana = new DevolucionView();
+            ventana.DataContext = DevolucionViewModel.Resolver(ventana, _devoluciones, d, proveedor, EsAdmin);
+            if (!await Dialogs.ShowForm(ventana))
+                return false;
+            _avisos.Exito("Garantía actualizada.");
+            return true;
+        }
+
+        /**
+         * @brief Registra un repuesto devuelto al proveedor seleccionado.
+         */
+        private async Task Devolver()
+        {
+            var p = Seleccionado;
+            var ventana = new DevolucionView();
+            ventana.DataContext = DevolucionViewModel.AProveedor(ventana, _devoluciones, p, _repuestos.Buscar(null, null));
+            if (!await Dialogs.ShowForm(ventana))
+                return;
+            var actual = _proveedores.ObtenerPorId(p.Id);
+            _avisos.Exito(actual?.TienePendientes == true
+                ? $"Devolución guardada. Cuando {p.Nombre} responda, anótalo en sus entradas y devoluciones."
+                : "Devolución guardada.");
+            Cargar(p.Id);
         }
 
         /**

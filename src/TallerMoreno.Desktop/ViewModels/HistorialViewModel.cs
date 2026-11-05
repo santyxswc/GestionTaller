@@ -27,6 +27,8 @@ namespace TallerMoreno.Desktop.ViewModels
         private readonly ReporteService _reportes;
         /** Excel. */
         private readonly ExportacionService _exportacion;
+        /** Devoluciones, para registrarlas desde el detalle de una venta. */
+        private readonly DevolucionService _devoluciones;
         /** Usuario de la sesión. */
         private readonly ISesionUsuario _sesion;
         /** Avisos breves. */
@@ -70,20 +72,22 @@ namespace TallerMoreno.Desktop.ViewModels
          * @param ventas Ventas
          * @param reportes Reportes
          * @param exportacion Excel
+         * @param devoluciones Devoluciones
          * @param sesion Usuario de la sesión
          * @param avisos Avisos breves
          */
         public HistorialViewModel(VentaService ventas, ReporteService reportes, ExportacionService exportacion,
-                                  ISesionUsuario sesion, Avisos avisos)
+                                  DevolucionService devoluciones, ISesionUsuario sesion, Avisos avisos)
         {
             _ventas = ventas;
             _reportes = reportes;
             _exportacion = exportacion;
+            _devoluciones = devoluciones;
             _sesion = sesion;
             _avisos = avisos;
 
             VerCommand = new AsyncRelayCommand(Ver, () => Seleccionada != null);
-            AnularCommand = new AsyncRelayCommand(Anular, () => Seleccionada is { Anulada: false });
+            AnularCommand = new AsyncRelayCommand(Anular, () => Seleccionada is { Anulada: false, Devoluciones: 0 });
             ExcelCommand = new AsyncRelayCommand(Excel);
             Cargar();
         }
@@ -126,13 +130,16 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Abre el detalle de la venta seleccionada.
+         * @brief Abre el detalle de la venta seleccionada; desde ahí se puede registrar una devolución.
          */
         private async Task Ver()
         {
-            var venta = _ventas.ObtenerDetalle(Seleccionada.Id);
-            if (venta != null)
-                await DocumentoView.Mostrar(venta);
+            int id = Seleccionada.Id;
+            if (await DocumentoView.MostrarVenta(_ventas, _devoluciones, id))
+            {
+                _avisos.Exito($"Devolución de la venta N° {id} guardada.");
+                Cargar();
+            }
         }
 
         /**

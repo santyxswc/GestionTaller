@@ -67,6 +67,17 @@
             </Panel>
             <Button Grid.Column="2" Classes="secundario" Content="＋ Nuevo" Command="{Binding NuevoClienteCommand}"/>
           </Grid>
+          <!-- Kilometraje del carro: queda en la venta y como el último del cliente. -->
+          <StackPanel IsVisible="{Binding TieneCliente}" Margin="0,10,0,0">
+            <Grid ColumnDefinitions="Auto,*">
+              <TextBlock Text="Kilometraje" VerticalAlignment="Center" FontWeight="SemiBold"/>
+              <NumericUpDown Grid.Column="1" Value="{Binding Kilometraje}" Minimum="0" Maximum="3000000" Increment="1000"
+                             FormatString="N0" Watermark="Opcional" ShowButtonSpinner="False" Margin="12,0,0,0"/>
+            </Grid>
+            <TextBlock Classes="ayuda" Text="{Binding TextoUltimoKilometraje}"/>
+            <TextBlock Classes="ayuda" Text="{Binding AvisoKilometraje}" Foreground="{StaticResource AvisoBrush}"
+                       IsVisible="{Binding HayAvisoKilometraje}"/>
+          </StackPanel>
         </StackPanel>
 
         <!-- Cobrar -->

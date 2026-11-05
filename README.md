@@ -10,9 +10,9 @@ botones grandes, pocas pantallas y lo justo en cada una.
 | --- | --- |
 | 🛒 **Vender** (F1) | Tocar los repuestos (con foto) para agregarlos, elegir el cliente si se quiere, cómo paga y **Cobrar**. Con **Queda debiendo (fiado)** el cliente paga una parte o nada y el resto queda anotado. Las unidades se descuentan solas del inventario. |
 | 📦 **Inventario** (F2) | Tarjetas con foto, unidades y precio. Buscar, filtrar por categoría, ver **solo lo que hay que pedir**, registrar **Llegó mercancía** y **Descargar Excel** en cualquier momento. |
-| 👥 **Clientes** (F3) | Nombre, placa, vehículo y celular. Muestra **cuánto ha comprado y cuánto te debe cada cliente**, el detalle de cada compra y **Registrar abono** cuando paga lo que debía. |
-| 🚚 **Proveedores** (F4) | A quién se le compra, **cuánto se le ha comprado, cuánto se le ha pagado y cuánto se le debe**, cada entrada de mercancía y **Registrar pago** para ir pagando lo que se quedó debiendo. |
-| 🧾 **Historial de ventas** (F5) | Ventas de hoy, la semana, el mes o el año, con totales y el detalle de cada venta. |
+| 👥 **Clientes** (F3) | Nombre, placa, vehículo, **kilometraje** y celular. Muestra **cuánto ha comprado, cuánto te debe y cuántas devoluciones tiene cada cliente**, el detalle de cada compra y **Registrar abono** cuando paga lo que debía. |
+| 🚚 **Proveedores** (F4) | A quién se le compra, **cuánto se le ha comprado, cuánto se le ha pagado y cuánto se le debe**, cada entrada de mercancía, **Registrar pago** para ir pagando lo que se quedó debiendo y **Devolución o garantía** para lo que se le devuelve. |
+| 🧾 **Historial de ventas** (F5) | Ventas de hoy, la semana, el mes o el año, con totales y el detalle de cada venta, desde donde se registra una **devolución o garantía**. |
 
 ### Conteo de unidades
 
@@ -33,9 +33,27 @@ Cada repuesto tiene un mínimo: cuando quedan esas unidades o menos sale marcado
 - **Un cliente:** en **Vender**, elegir el cliente, marcar **Queda debiendo (fiado)** y escribir cuánto abona
   ahora (puede ser 0). Lo que falta queda en la columna **Te debe** de Clientes y se va bajando con **Registrar abono**.
 - No se puede pagar ni abonar más de lo que se debe. Si un pago o abono se anotó mal, el administrador lo borra
-  tocando dos veces su fila en **Entradas y pagos** o **Compras y abonos**.
+  tocando dos veces su fila en **Entradas y devoluciones** o **Compras y devoluciones**.
 - Al anular una venta fiada, su deuda desaparece.
 - Al actualizar desde una versión anterior, todo lo que ya estaba registrado queda como pagado completo.
+
+### Devoluciones y garantías
+
+- **De un cliente:** abrir la venta (desde **Historial** o desde **Compras y devoluciones** del cliente) y tocar
+  **Devolución o garantía**. Se elige el repuesto, el motivo y qué se le dio: **otro igual** (sale del inventario),
+  **la plata** o **una rebaja de lo que debe**. Si el repuesto devuelto está bueno, se marca y vuelve al inventario.
+- **A un proveedor:** en Proveedores, **Devolución o garantía**. Si todavía no responde, queda **pendiente**;
+  cuando responda, se toca dos veces en **Entradas y devoluciones** y se anota si lo cambió (entra al inventario),
+  devolvió la plata o lo rebajó de la deuda. Si es un repuesto malo que devolvió un cliente, se desmarca
+  **Sale de mi inventario**.
+- Lo devuelto en plata o rebajado se resta de lo comprado y de lo que se debe. Una venta con devoluciones no se anula;
+  si una devolución se anotó mal, el administrador la borra tocándola dos veces.
+
+### Kilometraje
+
+Al vender con cliente se anota el kilometraje del carro; el programa muestra el de la última vez y avisa si el nuevo
+es menor. También se puede escribir en el formulario del cliente. Se ve en la tabla de clientes, en sus compras y en
+el detalle de cada venta.
 
 ### Usuarios
 

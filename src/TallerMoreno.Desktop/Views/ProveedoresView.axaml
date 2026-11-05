@@ -16,13 +16,21 @@
     <TextBox DockPanel.Dock="Top" Classes="buscador" Margin="0,18,0,16" Text="{Binding Busqueda}"
              Watermark="🔍  Buscar por nombre, NIT, contacto o teléfono"/>
 
-    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="10" Margin="0,16,0,0">
-      <Button Content="📦  Entradas y pagos" Command="{Binding EntradasCommand}"/>
+    <!-- Si la ventana es angosta, los botones pasan a una segunda fila. -->
+    <WrapPanel DockPanel.Dock="Bottom" Margin="0,16,0,-8">
+      <WrapPanel.Styles>
+        <Style Selector="WrapPanel > Button">
+          <Setter Property="Margin" Value="0,0,10,8"/>
+        </Style>
+      </WrapPanel.Styles>
+      <Button Content="📦  Entradas y devoluciones" Command="{Binding EntradasCommand}"/>
       <Button Classes="exito" Content="💵  Registrar pago" Command="{Binding PagarCommand}"/>
+      <Button Classes="secundario" Content="↩  Devolución o garantía" Command="{Binding DevolverCommand}"
+              ToolTip.Tip="Un repuesto que le devuelves al proveedor: por garantía, porque llegó dañado o porque no era el que pediste"/>
       <Button Classes="secundario" Content="✏️  Editar" Command="{Binding EditarCommand}"/>
       <Button Classes="secundario" Content="Eliminar" Foreground="{StaticResource PeligroBrush}"
               IsVisible="{Binding EsAdmin}" Command="{Binding EliminarCommand}"/>
-    </StackPanel>
+    </WrapPanel>
 
     <Panel>
       <Border Classes="tarjeta" ClipToBounds="True" IsVisible="{Binding !SinResultados}">
@@ -35,6 +43,13 @@
               <DataGridTemplateColumn.CellTemplate>
                 <DataTemplate>
                   <TextBlock Classes="deuda" Classes.debe="{Binding TieneDeuda}" Text="{Binding DeudaTexto}"/>
+                </DataTemplate>
+              </DataGridTemplateColumn.CellTemplate>
+            </DataGridTemplateColumn>
+            <DataGridTemplateColumn Header="Devoluciones" Width="Auto" SortMemberPath="Devoluciones">
+              <DataGridTemplateColumn.CellTemplate>
+                <DataTemplate>
+                  <TextBlock Classes="deuda" Classes.pendiente="{Binding TienePendientes}" Text="{Binding DevolucionesTexto}"/>
                 </DataTemplate>
               </DataGridTemplateColumn.CellTemplate>
             </DataGridTemplateColumn>

@@ -20,14 +20,23 @@ namespace TallerMoreno.Infrastructure.Repositories
         /** Fábrica de conexiones a la base de datos. */
         private readonly IDbConnectionFactory _conexiones;
 
-        /** Proveedores con el total, el número y la fecha de sus entradas, y lo que se les ha pagado. */
+        /**
+         * Proveedores con el total, el número y la fecha de sus entradas, lo que se les ha pagado y sus devoluciones.
+         * Lo que el proveedor devolvió en plata o rebajó de la deuda se resta de lo comprado; la plata devuelta, también de lo pagado.
+         */
         private const string SelectSql = @"
             SELECT p.id AS Id, p.nombre AS Nombre, p.nit AS Nit, p.contacto AS Contacto, p.telefono AS Telefono,
                    p.correo AS Correo, p.direccion AS Direccion, p.notas AS Notas,
-                   (SELECT COALESCE(SUM(e.total), 0) FROM entrada e WHERE e.proveedor_id = p.id) AS TotalComprado,
+                   (SELECT COALESCE(SUM(e.total), 0) FROM entrada e WHERE e.proveedor_id = p.id)
+                 - (SELECT COALESCE(SUM(d.valor), 0) FROM devolucion_proveedor d
+                    WHERE d.proveedor_id = p.id AND d.resultado IN ('Dinero', 'Descuento')) AS TotalComprado,
                    (SELECT COUNT(*) FROM entrada e WHERE e.proveedor_id = p.id) AS NumeroEntradas,
                    (SELECT MAX(e.fecha) FROM entrada e WHERE e.proveedor_id = p.id) AS UltimaEntrada,
-                   (SELECT COALESCE(SUM(g.valor), 0) FROM pago_proveedor g WHERE g.proveedor_id = p.id) AS TotalPagado
+                   (SELECT COALESCE(SUM(g.valor), 0) FROM pago_proveedor g WHERE g.proveedor_id = p.id)
+                 - (SELECT COALESCE(SUM(d.valor), 0) FROM devolucion_proveedor d
+                    WHERE d.proveedor_id = p.id AND d.resultado = 'Dinero') AS TotalPagado,
+                   (SELECT COUNT(*) FROM devolucion_proveedor d WHERE d.proveedor_id = p.id) AS Devoluciones,
+                   (SELECT COUNT(*) FROM devolucion_proveedor d WHERE d.proveedor_id = p.id AND d.resultado = 'Pendiente') AS Pendientes
             FROM proveedor p";
 
         /**

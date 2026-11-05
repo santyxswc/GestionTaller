@@ -26,6 +26,8 @@ namespace TallerMoreno.Desktop.ViewModels
         private readonly VentaService _ventas;
         /** Excel. */
         private readonly ExportacionService _exportacion;
+        /** Devoluciones. */
+        private readonly DevolucionService _devoluciones;
         /** Usuario de la sesión. */
         private readonly ISesionUsuario _sesion;
         /** Creación de ventanas. */
@@ -71,16 +73,18 @@ namespace TallerMoreno.Desktop.ViewModels
          * @param clientes Clientes
          * @param ventas Ventas
          * @param exportacion Excel
+         * @param devoluciones Devoluciones
          * @param sesion Usuario de la sesión
          * @param vistas Creación de ventanas
          * @param avisos Avisos breves
          */
-        public ClientesViewModel(ClienteService clientes, VentaService ventas, ExportacionService exportacion,
+        public ClientesViewModel(ClienteService clientes, VentaService ventas, ExportacionService exportacion, DevolucionService devoluciones,
                                  ISesionUsuario sesion, FabricaVistas vistas, Avisos avisos)
         {
             _clientes = clientes;
             _ventas = ventas;
             _exportacion = exportacion;
+            _devoluciones = devoluciones;
             _sesion = sesion;
             _vistas = vistas;
             _avisos = avisos;
@@ -147,7 +151,7 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Muestra las compras y abonos del cliente; se vuelve a abrir si abona o se borra un abono.
+         * @brief Muestra las compras, abonos y devoluciones del cliente; se vuelve a abrir si algo cambia.
          */
         private async Task VerCompras()
         {
@@ -157,7 +161,7 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Abre la lista con las compras y abonos del cliente; al tocar una compra se abre su detalle.
+         * @brief Abre la lista con las compras, abonos y devoluciones del cliente; al tocar una compra se abre su detalle.
          * @param id Cliente
          * @return true si cambió algo y hay que abrirla otra vez
          */
@@ -167,6 +171,7 @@ namespace TallerMoreno.Desktop.ViewModels
             if (c == null) return false;
             var compras = _clientes.Compras(id).ToList();
             var abonos = _clientes.Abonos(id).Where(a => a.DocumentoId == null).ToList();
+            var devoluciones = _devoluciones.DeCliente(id).ToList();
 
             string contacto = string.Join(" · ", new[] { c.Telefono, c.Placa, c.Vehiculo }.Where(s => !string.IsNullOrWhiteSpace(s)));
             var filas = compras.Select(v => new FilaDocumento
@@ -180,27 +185,30 @@ namespace TallerMoreno.Desktop.ViewModels
             }).Concat(abonos.Select(a => new FilaDocumento
             {
                 Id = a.Id,
-                EsPago = true,
+                Tipo = TipoFila.Pago,
                 Fecha = a.Fecha,
                 Descripcion = FilaDocumento.DescripcionPago("Abono", a),
                 Total = a.Valor,
                 Estado = "Abono"
-            })).OrderByDescending(f => f.Fecha).ToList();
+            })).Concat(devoluciones.Select(d => FilaDocumento.DeDevolucion(d, deProveedor: false)))
+            .OrderByDescending(f => f.Fecha).ToList();
 
             var ventana = new ListaDocumentosView();
             var vm = new ListaDocumentosViewModel(ventana, AbrirFila, c.TieneDeuda ? () => Abonar(c) : null)
             {
                 Titulo = c.Nombre,
-                Subtitulo = string.IsNullOrEmpty(contacto) ? "Compras y abonos del cliente" : contacto,
+                Subtitulo = string.IsNullOrEmpty(contacto) ? "Compras, abonos y devoluciones del cliente" : contacto,
                 Cifras =
                 [
                     new Dato("Total comprado", Formato.Moneda(c.TotalComprado)),
                     new Dato("Ha pagado", Formato.Moneda(c.TotalPagado)),
                     new Dato("Te debe", c.TieneDeuda ? Formato.Moneda(c.Deuda) : c.Deuda < 0 ? c.DeudaTexto : "Nada"),
-                    new Dato("Compras", Formato.Numero(c.NumeroCompras))
+                    new Dato(c.KilometrajeFecha.HasValue ? $"Kilometraje · {c.KilometrajeFecha:dd/MM/yy}" : "Kilometraje",
+                             c.Kilometraje.HasValue ? c.KilometrajeTexto : "Sin anotar")
                 ],
                 Filas = filas,
                 TextoVacio = "Este cliente todavía no tiene compras.",
+                Ayuda = "Toca una compra dos veces para ver el detalle o registrar una devolución o garantía.",
                 TextoAccion = c.TieneDeuda ? "💵  Registrar abono" : null
             };
             ventana.DataContext = vm;
@@ -209,41 +217,49 @@ namespace TallerMoreno.Desktop.ViewModels
         }
 
         /**
-         * @brief Texto de una compra en la lista: cómo pagó, quién vendió y cuánto abonó si se fió.
+         * @brief Texto de una compra en la lista: kilometraje, cómo pagó, quién vendió y cuánto abonó si se fió.
          * @param v Venta
          * @return Descripción
          */
         private static string DescripcionCompra(Venta v)
         {
-            if (v.Fiada && !v.Anulada)
-                return v.Abonado > 0 ? $"{v.MetodoPago} · abonó {Formato.Moneda(v.Abonado)} al comprar" : "Sin abono al comprar";
-            return $"{v.MetodoPago} · vendió {v.UsuarioNombre}";
+            string pago = v.Fiada && !v.Anulada
+                ? v.Abonado > 0 ? $"{v.MetodoPago} · abonó {Formato.Moneda(v.Abonado)} al comprar" : "Sin abono al comprar"
+                : $"{v.MetodoPago} · vendió {v.UsuarioNombre}";
+            return v.Kilometraje.HasValue ? $"{Formato.Kilometraje(v.Kilometraje)} · {pago}" : pago;
         }
 
         /**
-         * @brief Abre el detalle de una compra, o borra un abono si es el administrador.
+         * @brief Abre el detalle de una compra (desde ahí se registra una devolución), o borra un abono
+         * o una devolución si es el administrador.
          * @param fila Fila tocada
-         * @return true si se borró un abono
+         * @return true si cambió algo
          */
         private async Task<bool> AbrirFila(FilaDocumento fila)
         {
-            if (!fila.EsPago)
+            if (fila.Tipo == TipoFila.Documento)
             {
-                var venta = _ventas.ObtenerDetalle(fila.Id);
-                if (venta != null)
-                    await DocumentoView.Mostrar(venta);
-                return false;
+                if (!await DocumentoView.MostrarVenta(_ventas, _devoluciones, fila.Id))
+                    return false;
+                _avisos.Exito($"Devolución de la venta N° {fila.Id} guardada.");
+                return true;
             }
 
             if (!EsAdmin)
                 return false;
-            if (!await Dialogs.Confirm($"¿Borrar el abono de {Formato.Moneda(fila.Total)} del {fila.Fecha:dd/MM/yyyy}? Lo que debía vuelve a aparecer.",
-                                       "Borrar abono", "Borrar"))
+            bool esAbono = fila.EsPago;
+            string pregunta = esAbono
+                ? $"¿Borrar el abono de {Formato.Moneda(fila.Total ?? 0)} del {fila.Fecha:dd/MM/yyyy}? Lo que debía vuelve a aparecer."
+                : $"¿Borrar la devolución del {fila.Fecha:dd/MM/yyyy}? Se deshace lo que movió en el inventario y en lo que debe.";
+            if (!await Dialogs.Confirm(pregunta, esAbono ? "Borrar abono" : "Borrar devolución", "Borrar"))
                 return false;
             try
             {
-                _clientes.EliminarAbono(fila.Id);
-                _avisos.Exito("Abono borrado.");
+                if (esAbono)
+                    _clientes.EliminarAbono(fila.Id);
+                else
+                    _devoluciones.EliminarDeCliente(fila.Id);
+                _avisos.Exito(esAbono ? "Abono borrado." : "Devolución borrada.");
                 return true;
             }
             catch (Exception ex)
